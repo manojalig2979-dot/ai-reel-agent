@@ -33,13 +33,23 @@ def get_config_val(key: str, default: str = "") -> str:
         pass
     return os.getenv(key, default)
 
-# LLM Keys (Supports multiple backup keys: key1, key2, key3)
-raw_gemini_keys = get_config_val("GEMINI_API_KEYS") or get_config_val("GEMINI_API_KEY", "")
-GEMINI_API_KEYS = [k.strip() for k in re.split(r"[,;\n]+", raw_gemini_keys) if k.strip()]
+# LLM Keys (Supports multiple backup keys: comma-separated or separate GEMINI_API_KEY, GEMINI_API_KEY_BACKUP, GEMINI_API_KEY_2, etc.)
+def _collect_keys(base_name: str) -> list:
+    keys = []
+    # 1. Comma/newline separated list from base or plural variable
+    for var in [f"{base_name}S", base_name, f"{base_name}_1", f"{base_name}_2", f"{base_name}_3", f"{base_name}_4", f"{base_name}_5", f"{base_name}_BACKUP", f"{base_name}_BACKUP_1", f"{base_name}_BACKUP_2", f"{base_name}_BACKUP_3"]:
+        raw = get_config_val(var, "")
+        if raw:
+            for item in re.split(r"[,;\n]+", raw):
+                item = item.strip().strip("'\"")
+                if item and item not in keys:
+                    keys.append(item)
+    return keys
+
+GEMINI_API_KEYS = _collect_keys("GEMINI_API_KEY")
 GEMINI_API_KEY = GEMINI_API_KEYS[0] if GEMINI_API_KEYS else ""
 
-raw_groq_keys = get_config_val("GROQ_API_KEYS") or get_config_val("GROQ_API_KEY", "")
-GROQ_API_KEYS = [k.strip() for k in re.split(r"[,;\n]+", raw_groq_keys) if k.strip()]
+GROQ_API_KEYS = _collect_keys("GROQ_API_KEY")
 GROQ_API_KEY = GROQ_API_KEYS[0] if GROQ_API_KEYS else ""
 
 # Video Configuration (Standard 9:16 Vertical Reel)
