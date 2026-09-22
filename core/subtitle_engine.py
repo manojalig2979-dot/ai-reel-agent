@@ -12,18 +12,34 @@ class SubtitleEngine:
         self.height = height
 
     def _get_font(self, size: int = 56):
-        """Find or load a bold font."""
+        """Find or load a bold font with full Unicode/Hindi/Devanagari support."""
         font_candidates = [
+            # 1. Bundled High-Retention Project Fonts
+            config.FONTS_DIR / "Mukta-Bold.ttf",
+            config.FONTS_DIR / "NotoSansDevanagari.ttf",
+            config.FONTS_DIR / "Poppins-Bold.ttf",
+            # 2. Windows Indic Fonts (Hindi, Sanskrit, Marathi, etc.)
+            "C:/Windows/Fonts/NirmalaB.ttf",
+            "C:/Windows/Fonts/Nirmala.ttf",
+            "C:/Windows/Fonts/mangalb.ttf",
+            "C:/Windows/Fonts/mangal.ttf",
+            "C:/Windows/Fonts/aparajb.ttf",
+            "C:/Windows/Fonts/utsaahb.ttf",
+            # 3. Linux / Ubuntu System Fonts
+            "/usr/share/fonts/truetype/noto/NotoSansDevanagari-Bold.ttf",
+            "/usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+            # 4. Standard Fallbacks
+            "C:/Windows/Fonts/segoeuib.ttf",
             "C:/Windows/Fonts/arialbd.ttf",
             "C:/Windows/Fonts/impact.ttf",
-            "C:/Windows/Fonts/segoeuib.ttf",
-            "C:/Windows/Fonts/calibrib.ttf",
             "C:/Windows/Fonts/arial.ttf"
         ]
         for f in font_candidates:
-            if Path(f).exists():
+            p = Path(f)
+            if p.exists():
                 try:
-                    return ImageFont.truetype(f, size)
+                    return ImageFont.truetype(str(p), size)
                 except Exception:
                     continue
         return ImageFont.load_default()
@@ -38,20 +54,21 @@ class SubtitleEngine:
     ) -> np.ndarray:
         """
         Renders a transparent RGBA image with styled high-retention vertical subtitles.
-        Uses Pillow to ensure 100% compatibility on Windows without ImageMagick.
+        Uses Pillow to ensure 100% compatibility across Windows and Linux.
         """
         # Create transparent canvas
         img = Image.new("RGBA", (self.width, self.height), (0, 0, 0, 0))
         draw = ImageDraw.Draw(img)
-        font = self._get_font(size=64)
+        font = self._get_font(size=62)
 
-        # Wrap text nicely for 9:16 vertical reels (around 22-26 chars per line)
-        wrapped_lines = textwrap.wrap(text.upper(), width=24)
+        # Wrap text nicely for 9:16 vertical reels (upper only if Latin/English)
+        display_text = text.upper() if text.isascii() else text
+        wrapped_lines = textwrap.wrap(display_text, width=24)
         if not wrapped_lines:
             return np.array(img)
 
         # Calculate bounding box and height
-        line_height = 80
+        line_height = 84
         total_text_height = len(wrapped_lines) * line_height
 
         # Position subtitles in the middle-lower third (Y around 68-75% of screen)

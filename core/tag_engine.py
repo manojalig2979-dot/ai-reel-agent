@@ -37,6 +37,11 @@ class TagOptimizer:
             "#businessmindset", "#moneytips", "#wealthbuilding", "#investing",
             "#entrepreneur", "#financialfreedom", "#millionairemindset", "#passiveincome",
             "#viralreels", "#explorepage", "#businessreels"
+        ],
+        "Poetry & Shayari": [
+            "#hindipoetry", "#shayari", "#kavita", "#spokenword", "#poetryreels",
+            "#hindikavita", "#shayarilover", "#writersofinstagram", "#instapoetry",
+            "#poetryofig", "#twoliner", "#viralreels", "#explorepage", "#reelsindia"
         ]
     }
 

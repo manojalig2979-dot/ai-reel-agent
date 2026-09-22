@@ -20,14 +20,29 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom Styling
+# Custom Styling for Desktop & Studio App
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
     
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    .stDeployButton {display: none;}
+    
+    /* Ensure sidebar is prominent, clean, and never permanently hidden */
+    section[data-testid="stSidebar"] {
+        border-right: 1px solid #30363D;
+        background-color: #12151D;
+    }
+    
+    .block-container {
+        padding-top: 2rem !important;
+        padding-bottom: 2rem !important;
+    }
+
     .main-title {
         font-family: 'Inter', sans-serif;
-        font-size: 2.4rem;
+        font-size: 2.3rem;
         font-weight: 800;
         background: linear-gradient(90deg, #FF4B4B 0%, #FF8533 50%, #FFD000 100%);
         -webkit-background-clip: text;
@@ -155,7 +170,7 @@ with hcol2:
 
 st.write("")
 
-tabs = st.tabs(["✨ Generate Reel", "📅 7-Day Weekly Planner", "🏷️ Tags & Optimization", "📁 Video Library", "📘 Meta Setup"])
+tabs = st.tabs(["✨ Generate Reel", "✍️ Poetry & Writings", "📅 7-Day Weekly Planner", "🏷️ Tags & Optimization", "📁 Video Library", "📘 Meta Setup"])
 
 # TAB 1: GENERATE NEW REEL
 with tabs[0]:
@@ -165,6 +180,7 @@ with tabs[0]:
         st.subheader("💡 Video Concept & Prompt")
         
         niche_options = [
+            "Bhagavad Gita & Spirituality",
             "Science & Space",
             "Motivation & Mindset",
             "AI & Future Tech",
@@ -176,6 +192,7 @@ with tabs[0]:
         selected_niche = st.selectbox("Select Niche / Category", niche_options)
 
         default_prompts = {
+            "Bhagavad Gita & Spirituality": "श्रीमद्भगवद्गीता अध्याय 2 श्लोक 47: कर्मण्येवाधिकारस्ते मा फलेषु कदाचन। कर्म का असली रहस्य।",
             "Science & Space": "The terrifying truth about what happens if you fall into a supermassive black hole.",
             "Motivation & Mindset": "3 stoic rules to become emotionally untouchable and laser-focused.",
             "AI & Future Tech": "How humanoid robots are about to change daily human life forever.",
@@ -190,6 +207,16 @@ with tabs[0]:
             value=default_prompts.get(selected_niche, ""),
             height=110
         )
+
+        with st.expander("🎙️ Voice & Background Music Settings", expanded=False):
+            scol1, scol2 = st.columns(2)
+            with scol1:
+                tab_voice_label = st.selectbox("Speech Voice", options=list(config.VOICE_OPTIONS.keys()), index=0, key="tab_voice_select")
+                selected_voice_id = config.VOICE_OPTIONS[tab_voice_label]
+            with scol2:
+                tab_music_tracks = get_available_music_tracks()
+                tab_music_label = st.selectbox("Background Track", list(tab_music_tracks.keys()), index=1 if len(tab_music_tracks) > 1 else 0, key="tab_music_select")
+                selected_music_path = tab_music_tracks[tab_music_label]
 
         with st.expander("🏷️ Custom Tags & Account Mentions", expanded=False):
             custom_tags_input = st.text_input("Custom Hashtags (comma separated)", value="#NDStudio, #NDTechHub, #Trending")
@@ -288,8 +315,163 @@ with tabs[0]:
                 st.code(traceback.format_exc())
 
 
-# TAB 2: 7-DAY WEEKLY PLANNER
+# TAB 2: POETRY & PERSONAL WRITINGS (Dedicated Isolated Section)
 with tabs[1]:
+    st.subheader("✍️ Poetry, Shayari & Spoken Word Reel Studio")
+    st.caption("Turn your original Hindi / English poetry, shayaris, and spoken words into cinematic 9:16 vertical reels.")
+
+    pcol1, pcol2 = st.columns([1.1, 0.9])
+
+    with pcol1:
+        st.write("### 🖋️ Your Original Poem / Writing")
+
+        p_meta1, p_meta2 = st.columns([0.6, 0.4])
+        with p_meta1:
+            poet_author = st.text_input("Author / Poet Name", value="मनोज / ND Poetry", help="Your signature on the reel & caption.")
+        with p_meta2:
+            poem_lang = st.selectbox("Poem Language", ["Hindi (हिंदी)", "English", "Hinglish / Urdu"], index=0)
+
+        p_style1, p_style2 = st.columns([0.5, 0.5])
+        with p_style1:
+            poem_mood = st.selectbox(
+                "Poem Mood & Emotion",
+                [
+                    "Soulful & Emotional (भावुक व गहरा)",
+                    "Melancholic & Heartbreak (दर्द व तन्हाई)",
+                    "Romantic & Love (प्रेम व इश्क़)",
+                    "Inspirational & Fierce (उत्साह व जुनून)",
+                    "Nostalgic & Memories (यादें व बचपन)",
+                    "Philosophical & Sufi (सूफ़ी व रूहानी)"
+                ],
+                index=0
+            )
+        with p_style2:
+            poem_art_style = st.selectbox(
+                "Visual Cinematic Art Style",
+                [
+                    "Cinematic 8K (सिनेमैटिक)",
+                    "Moody Dark Rain & Vintage (बारिश व विंटेज)",
+                    "Golden Hour & Sunset (सुनहरी शाम)",
+                    "Starry Night & Ethereal (तारों भरी रात)",
+                    "Misty Mountains & Solitude (पहाड़ व शांति)",
+                    "Vintage Retro Film (रेट्रो फ़िल्म)"
+                ],
+                index=0
+            )
+
+        p_audio1, p_audio2 = st.columns([0.5, 0.5])
+        with p_audio1:
+            poetry_music_options = get_available_music_tracks()
+            poem_selected_music = st.selectbox("Poetry Background Music", list(poetry_music_options.keys()), index=0, key="poem_music_select")
+            poem_music_path = poetry_music_options[poem_selected_music]
+        with p_audio2:
+            poem_voice_label = st.selectbox("Recitation Voice", options=list(config.VOICE_OPTIONS.keys()), index=0, key="poem_voice_select")
+            poem_voice_id = config.VOICE_OPTIONS[poem_voice_label]
+
+        sample_poem = (
+            "कभी कभी कुछ अल्फ़ाज़ खामोशियों में बेहतर लगते हैं,\n"
+            "जैसे रेत पर लिखी दास्तानें हवाओं से संवरती हैं।\n"
+            "रास्तों की तलाश में मंजिलें खुद ठहर गईं,\n"
+            "जब हमने अपनी ही रूह से बातें करना सीख लिया।"
+        )
+
+        user_poem_text = st.text_area(
+            "Paste or Type Your Poem / Lines Here (Each stanza becomes a cinematic visual scene):",
+            value=sample_poem,
+            height=140
+        )
+
+        poem_auto_post = st.checkbox("Auto-publish to Facebook upon completion", value=False, key="poem_autopost")
+
+        generate_poetry_btn = st.button("🎬 Generate Cinematic Poetry Reel", type="primary", use_container_width=True)
+
+    with pcol2:
+        st.subheader("📺 Poetry Reel Preview")
+        poem_preview_placeholder = st.empty()
+
+    if generate_poetry_btn:
+        if not user_poem_text.strip():
+            st.error("Please enter your poem text before generating.")
+        else:
+            p_prog = st.progress(0)
+            p_status = st.empty()
+
+            def update_poem_prog(msg, pct):
+                p_prog.progress(pct)
+                p_status.info(f"⏳ **{int(pct*100)}%** — {msg}")
+
+            try:
+                pipeline = ReelPipeline(
+                    voice=poem_voice_id,
+                    gemini_key=config.GEMINI_API_KEY,
+                    groq_key=config.GROQ_API_KEY
+                )
+
+                if meta_token_input:
+                    pipeline.publisher.access_token = meta_token_input
+                if fb_page_id_input:
+                    pipeline.publisher.fb_page_id = fb_page_id_input
+                if ig_account_id_input:
+                    pipeline.publisher.ig_account_id = ig_account_id_input
+
+                poem_res = pipeline.generate_poetry_reel(
+                    poem_text=user_poem_text,
+                    author_name=poet_author,
+                    mood=poem_mood,
+                    language=poem_lang,
+                    art_style=poem_art_style,
+                    voice=poem_voice_id,
+                    bg_music_path=poem_music_path,
+                    enable_watermark=opt_watermark,
+                    watermark_path=config.LOGO_PATH if opt_watermark else None,
+                    share_to_feed=opt_share_feed,
+                    allow_remixing=opt_allow_remix,
+                    auto_publish=poem_auto_post,
+                    progress_callback=update_poem_prog
+                )
+
+                p_status.success(f"🎉 Poetry Reel Created in {poem_res['elapsed_seconds']}s!")
+                p_prog.progress(1.0)
+
+                pv_path = poem_res["video_path"]
+                if Path(pv_path).exists():
+                    with open(pv_path, "rb") as pvf:
+                        pv_bytes = pvf.read()
+                        with pcol2:
+                            poem_preview_placeholder.video(pv_bytes)
+                            st.download_button(
+                                label="⬇️ Download Poetry Reel (1080x1920 MP4)",
+                                data=pv_bytes,
+                                file_name=Path(pv_path).name,
+                                mime="video/mp4",
+                                use_container_width=True,
+                                key="poem_download_btn"
+                            )
+
+                st.subheader("📝 Poetry Caption & Scene Breakdown")
+                p_script = poem_res["script_data"]
+                p_m1, p_m2 = st.columns([1, 1])
+                with p_m1:
+                    st.write("**Title:**", p_script.get("title", ""))
+                    st.text_area("Poetry Caption & Hashtags", poem_res["caption"], height=160, key="poem_cap_view")
+                with p_m2:
+                    st.write("**Stanza Scenes:**")
+                    for s in p_script.get("scenes", []):
+                        st.markdown(f"""
+                        <div class="scene-card">
+                            <b>Stanza {s.get('scene_id')}:</b> {s.get('narration')}<br>
+                            <small style="color: #79FFE1;">🎨 AI Visual Prompt: {s.get('visual_prompt')}</small>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+            except Exception as pe:
+                st.error(f"Error creating poetry reel: {pe}")
+                import traceback
+                st.code(traceback.format_exc())
+
+
+# TAB 3: 7-DAY WEEKLY PLANNER
+with tabs[2]:
     st.subheader("📅 7-Day Weekly Content Calendar")
     st.markdown("Configure your prompts for Monday through Sunday. The agent will automatically generate and post each day's topic at **09:00 PM**!")
 
@@ -339,8 +521,8 @@ with tabs[1]:
         st.success("✅ Weekly schedule saved successfully! Your daily 9:00 PM automation will now use these prompts.")
 
 
-# TAB 3: TAGS & OPTIMIZATION SETTINGS
-with tabs[2]:
+# TAB 4: TAGS & OPTIMIZATION SETTINGS
+with tabs[3]:
     st.subheader("🏷️ Algorithmic Tag & Setting Optimization")
     tcol1, tcol2 = st.columns([1, 1])
 
@@ -363,8 +545,8 @@ with tabs[2]:
         """)
 
 
-# TAB 4: LIBRARY & QUEUE
-with tabs[3]:
+# TAB 5: LIBRARY & QUEUE
+with tabs[4]:
     st.subheader("📚 Generated Reels Library")
     queue = load_queue()
 
@@ -414,8 +596,8 @@ with tabs[3]:
                         st.info("Instagram publishing container active via Graph API.")
 
 
-# TAB 5: META API SETUP GUIDE
-with tabs[4]:
+# TAB 6: META API SETUP GUIDE
+with tabs[5]:
     st.subheader("📘 Meta Graph API Configuration")
     st.markdown(f"""
     Your connected accounts:

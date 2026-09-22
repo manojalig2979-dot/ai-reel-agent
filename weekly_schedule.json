@@ -1,44 +1,44 @@
 {
   "Monday": {
-    "niche": "Bhagavad Gita & Spirituality",
+    "niche": "Motivation & Mindset",
     "topic": "श्रीमद्भगवद्गीता अध्याय 2 श्लोक 47: कर्मण्येवाधिकारस्ते मा फलेषु कदाचन। कर्म करने का असली रहस्य और फल की चिंता से मुक्ति।",
-    "music": "spiritual",
-    "voice": "hi-IN-MadhurNeural"
+    "music": "motivation",
+    "voice": "hi-IN-SwaraNeural"
   },
   "Tuesday": {
-    "niche": "Bhagavad Gita & Spirituality",
+    "niche": "Motivation & Mindset",
     "topic": "श्रीमद्भगवद्गीता अध्याय 2 श्लोक 20: नैनं छिन्दन्ति शस्त्राणि नैनं दहति पावकः। आत्मा की अमरता और मृत्यु के भय से मुक्ति।",
-    "music": "spiritual",
-    "voice": "hi-IN-MadhurNeural"
+    "music": "motivation",
+    "voice": "hi-IN-SwaraNeural"
   },
   "Wednesday": {
-    "niche": "Bhagavad Gita & Spirituality",
+    "niche": "Science & Space",
     "topic": "श्रीमद्भगवद्गीता अध्याय 4 श्लोक 7: यदा यदा हि धर्मस्य ग्लानिर्भवति भारत। जब जब अधर्म बढ़ता है, ईश्वर का अवतरण और धर्म की रक्षा।",
-    "music": "spiritual",
-    "voice": "hi-IN-MadhurNeural"
+    "music": "motivation",
+    "voice": "hi-IN-SwaraNeural"
   },
   "Thursday": {
-    "niche": "Bhagavad Gita & Spirituality",
+    "niche": "Science & Space",
     "topic": "श्रीमद्भगवद्गीता अध्याय 6 श्लोक 5: उद्धरेदात्मनात्मानं नात्मानमवसादयेत्। अपने मन को कैसे अपना सबसे अच्छा मित्र बनाएं।",
-    "music": "spiritual",
-    "voice": "hi-IN-MadhurNeural"
+    "music": "motivation",
+    "voice": "hi-IN-SwaraNeural"
   },
   "Friday": {
-    "niche": "Bhagavad Gita & Spirituality",
+    "niche": "Science & Space",
     "topic": "श्रीमद्भगवद्गीता अध्याय 9 श्लोक 22: अनन्याश्चिन्तयन्तो मां ये जनाः पर्युपासते। जो अनन्य भाव से ईश्वर का स्मरण करते हैं उनका योगक्षेम।",
-    "music": "spiritual",
-    "voice": "hi-IN-MadhurNeural"
+    "music": "motivation",
+    "voice": "hi-IN-SwaraNeural"
   },
   "Saturday": {
-    "niche": "Bhagavad Gita & Spirituality",
+    "niche": "Science & Space",
     "topic": "श्रीमद्भगवद्गीता अध्याय 18 श्लोक 66: सर्वधर्मान्परित्यज्य मामेकं शरणं व्रज। सब चिंताओं को छोड़कर परमात्मा की शरण में जाने का फल।",
-    "music": "spiritual",
-    "voice": "hi-IN-MadhurNeural"
+    "music": "motivation",
+    "voice": "hi-IN-SwaraNeural"
   },
   "Sunday": {
-    "niche": "Bhagavad Gita & Spirituality",
+    "niche": "Science & Space",
     "topic": "श्रीमद्भगवद्गीता अध्याय 2 श्लोक 62-63: ध्यायतो विषयान्पुंसः। क्रोध और वासना से बुद्धि का नाश और शांति का मार्ग।",
-    "music": "spiritual",
-    "voice": "hi-IN-MadhurNeural"
+    "music": "motivation",
+    "voice": "hi-IN-SwaraNeural"
   }
 }

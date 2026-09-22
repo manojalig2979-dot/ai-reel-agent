@@ -155,3 +155,146 @@ class ReelPipeline:
             "elapsed_seconds": round(elapsed, 1),
             "published": publish_result
         }
+
+    def generate_poetry_reel(
+        self,
+        poem_text: str,
+        author_name: str = "Anonymous",
+        mood: str = "Soulful & Emotional",
+        language: str = "Hindi",
+        art_style: str = "Cinematic 8K",
+        voice: Optional[str] = None,
+        bg_music_path: Optional[Path] = None,
+        custom_tags: Optional[str] = None,
+        custom_mentions: Optional[str] = None,
+        enable_watermark: bool = True,
+        watermark_path: Optional[Path] = config.LOGO_PATH,
+        audio_name: str = "Poetry & Spoken Word • ND Studio",
+        share_to_feed: bool = True,
+        allow_remixing: bool = True,
+        auto_publish: bool = False,
+        progress_callback: Optional[Callable[[str, float], None]] = None
+    ) -> Dict[str, Any]:
+        """
+        Executes dedicated poetry reel creation: structures user poem into scenes,
+        renders emotional 9:16 imagery, synthesizes neural poetry recitation, and adds music ducking.
+        """
+        start_time = time.time()
+        job_id = f"poetry_{int(start_time)}"
+        job_dir = config.OUTPUT_DIR / job_id
+        job_dir.mkdir(parents=True, exist_ok=True)
+
+        selected_voice = voice or self.voice
+        active_watermark = watermark_path if (enable_watermark and watermark_path and Path(watermark_path).exists()) else None
+
+        def notify(msg: str, pct: float):
+            print(f"[{int(pct*100)}%] {msg}")
+            if progress_callback:
+                progress_callback(msg, pct)
+
+        # 1. Structure Poem & Visuals
+        notify("Analyzing poetic rhythm and generating aesthetic scene visual prompts...", 0.1)
+        script_data = self.llm.generate_poetry_script(
+            poem_text=poem_text,
+            mood=mood,
+            language=language,
+            art_style=art_style
+        )
+        title = script_data.get("title", f"Poem by {author_name}")
+        scenes = script_data.get("scenes", [])
+        base_caption = script_data.get("caption", f"🖋️ \"{poem_text[:100]}...\"\n\n— {author_name}")
+
+        if not scenes:
+            raise ValueError("Could not parse poetry scenes.")
+
+        # 2. Optimized Poetry Tags
+        tags_info = TagOptimizer.generate_tags(
+            prompt=f"{title} {mood} poetry",
+            niche="Poetry & Shayari",
+            custom_tags=custom_tags,
+            custom_mentions=custom_mentions
+        )
+        full_caption = TagOptimizer.format_optimized_caption(
+            base_caption,
+            tags_info,
+            call_to_action="अगर ये पंक्तियां दिल को छू गईं तो सेव करें और अपने करीबियों के साथ शेयर करें। 🌸"
+        )
+
+        processed_scenes = []
+        total_scenes = len(scenes)
+
+        # 3. Audio & Visuals per Stanza
+        for i, scene in enumerate(scenes):
+            scene_num = i + 1
+            narration = scene.get("narration", "")
+            vis_prompt = scene.get("visual_prompt", "")
+
+            notify(f"Reciting Stanza {scene_num}/{total_scenes}: Neural voiceover...", 0.2 + (0.2 * (i / total_scenes)))
+            audio_file = job_dir / f"scene_{scene_num}_audio.mp3"
+            self.tts.generate_voiceover(narration, audio_file, voice=selected_voice)
+
+            notify(f"Painting Stanza {scene_num}/{total_scenes}: 9:16 Aesthetic Visual...", 0.3 + (0.2 * (i / total_scenes)))
+            img_file = job_dir / f"scene_{scene_num}_image.jpg"
+            self.image_gen.generate_image(vis_prompt, img_file)
+
+            processed_scenes.append({
+                "scene_id": scene_num,
+                "narration": narration,
+                "image_path": img_file,
+                "audio_path": audio_file
+            })
+
+        # 4. Assemble Video with Motion, Subtitles & Poetry Music
+        notify("Rendering cinematic poetry reel with dynamic subtitles and background music...", 0.7)
+        final_video_path = job_dir / f"{job_id}_final.mp4"
+        self.video_gen.assemble_reel(
+            scenes_data=processed_scenes,
+            output_path=final_video_path,
+            bg_music_path=bg_music_path,
+            bg_music_volume=0.15,
+            watermark_path=active_watermark
+        )
+
+        # 5. Extract Cover Thumbnail
+        cover_path = self.publisher.extract_cover_thumbnail(final_video_path)
+
+        # 6. Save to Queue / Auto-Publish
+        notify("Saving poetry reel to library...", 0.9)
+        self.publisher.save_to_publish_queue(
+            video_path=final_video_path,
+            title=title,
+            caption=full_caption,
+            hashtags=tags_info["tags"],
+            metadata={
+                "cover_path": str(cover_path),
+                "audio_name": audio_name,
+                "share_to_feed": share_to_feed,
+                "allow_remixing": allow_remixing,
+                "watermark": bool(active_watermark),
+                "type": "poetry"
+            }
+        )
+
+        publish_result = None
+        if auto_publish and self.publisher.is_configured()["facebook"]:
+            notify("Publishing poetry reel to Facebook...", 0.95)
+            publish_result = self.publisher.publish_facebook_reel(
+                video_path=final_video_path,
+                caption=full_caption,
+                title=title,
+                allow_remixing=allow_remixing
+            )
+
+        notify("Poetry Reel created successfully!", 1.0)
+        elapsed = time.time() - start_time
+        return {
+            "job_id": job_id,
+            "title": title,
+            "video_path": str(final_video_path),
+            "cover_path": str(cover_path),
+            "script_data": script_data,
+            "caption": full_caption,
+            "hashtags": tags_info["tags"],
+            "elapsed_seconds": round(elapsed, 1),
+            "published": publish_result
+        }

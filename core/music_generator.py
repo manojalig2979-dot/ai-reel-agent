@@ -72,11 +72,29 @@ class MusicGenerator:
                     audio[mask] += 0.18 * np.sin(2 * np.pi * f * t[mask])
                     audio[mask] += 0.08 * np.sin(2 * np.pi * (f * 2) * t[mask])
 
-        elif mood == "lofi" or mood == "chill":
-            freqs = [130.81, 155.56, 196.0, 233.08, 311.13]
-            for i, f in enumerate(freqs):
-                wobble = 1.0 + 0.003 * np.sin(2 * np.pi * 4.0 * t)
-                audio += 0.15 * np.sin(2 * np.pi * f * wobble * t)
+        elif mood == "poetry_piano" or mood == "piano":
+            # Soulful, melancholic piano chord progression: Am -> F -> C -> G
+            progression = [
+                [220.0, 261.63, 329.63],         # Am (A3, C4, E4)
+                [174.61, 220.0, 261.63, 349.23], # F  (F3, A3, C4, F4)
+                [130.81, 164.81, 196.0, 261.63], # C  (C3, E3, G3, C4)
+                [196.0, 246.94, 293.66, 392.0],  # G  (G3, B3, D4, G4)
+            ]
+            section_len = duration / len(progression)
+            for idx, chord in enumerate(progression):
+                mask = (t >= idx * section_len) & (t < (idx + 1) * section_len)
+                sub_t = t[mask] - (idx * section_len)
+                decay = np.exp(-sub_t * 0.4)
+                for f in chord:
+                    audio[mask] += 0.22 * np.sin(2 * np.pi * f * t[mask]) * decay
+                    audio[mask] += 0.08 * np.sin(2 * np.pi * (f * 2) * t[mask]) * decay
+
+        elif mood == "acoustic_strings" or mood == "nostalgia":
+            # Warm acoustic ambient pads & slow melodic strings
+            string_freqs = [146.83, 220.0, 293.66, 329.63, 440.0]
+            for i, f in enumerate(string_freqs):
+                swell = 0.5 + 0.5 * np.sin(2 * np.pi * 0.08 * (i + 1) * t)
+                audio += 0.16 * np.sin(2 * np.pi * f * t) * swell
 
         else:
             bass_f = 55.0
