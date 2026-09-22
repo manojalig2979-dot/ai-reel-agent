@@ -6,9 +6,10 @@ import streamlit as st
 import config
 from core.pipeline import ReelPipeline
 from core.publisher import MetaPublisher
+from core.tag_engine import TagOptimizer
 
 st.set_page_config(
-    page_title="Free AI Reel Generator & Auto-Publisher",
+    page_title="AI Reel Studio & Algorithmic Auto-Publisher",
     page_icon="🎬",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -38,6 +39,18 @@ st.markdown("""
         background-color: #1E222D;
         color: #00E5FF;
         border: 1px solid #00E5FF33;
+    }
+    .badge-opt {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        margin-right: 6px;
+        margin-bottom: 6px;
+        background-color: #232733;
+        color: #79FFE1;
+        border: 1px solid #79FFE133;
     }
     .scene-card {
         background-color: #161B22;
@@ -74,7 +87,7 @@ def get_available_music_tracks():
 with st.sidebar:
     st.image("https://img.icons8.com/3d-fluency/94/video-editing.png", width=64)
     st.title("Agent Settings")
-    st.caption("100% Free AI Reel Generator")
+    st.caption("Algorithm-Optimized AI Reel Generator")
 
     st.subheader("🎙️ Voice Settings")
     selected_voice_label = st.selectbox(
@@ -91,34 +104,33 @@ with st.sidebar:
     selected_music_path = music_tracks[selected_music_label]
 
     st.divider()
-    st.subheader("🔑 API Keys (Optional)")
-    st.info("No paid keys needed! Free AI script generation and local rendering are active by default.")
-    
-    gemini_key_input = st.text_input("Google Gemini API Key (Free)", value=config.GEMINI_API_KEY, type="password")
-    groq_key_input = st.text_input("Groq API Key (Free)", value=config.GROQ_API_KEY, type="password")
+    st.subheader("⚡ Meta Optimization Settings")
+    opt_share_feed = st.checkbox("Instagram: Share to Main Feed Grid", value=True, help="Distributes video to both Reels tab and Profile Grid for 3x reach.")
+    opt_allow_remix = st.checkbox("Facebook: Allow Remixing & Stitches", value=True, help="Allows audience to remix your video, heavily boosted by FB algorithm.")
+    opt_audio_name = st.text_input("Custom Branded Audio Name", value="Original Audio • ND Studio")
 
     st.divider()
-    st.subheader("📱 Meta Publishing")
-    meta_token_input = st.text_input("Meta Graph Access Token", value=config.META_ACCESS_TOKEN, type="password")
+    st.subheader("📱 Meta API Accounts")
     fb_page_id_input = st.text_input("Facebook Page ID", value=config.FACEBOOK_PAGE_ID)
     ig_account_id_input = st.text_input("Instagram Account ID", value=config.INSTAGRAM_ACCOUNT_ID)
+    meta_token_input = st.text_input("Meta Graph Access Token", value=config.META_ACCESS_TOKEN, type="password")
 
 
 # Top Hero Header
-st.markdown('<div class="main-title">🎬 AI Reel Studio & Auto-Publisher</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-title">🎬 AI Reel Studio & Algorithmic Auto-Publisher</div>', unsafe_allow_html=True)
 st.markdown("""
 <div>
     <span class="badge">🚀 100% Free Tier</span>
-    <span class="badge">🎙️ Microsoft Neural TTS</span>
-    <span class="badge">🖼️ 9:16 Vertical AI Visuals</span>
-    <span class="badge">🎵 Background Music Ducking</span>
-    <span class="badge">📱 Instagram & Facebook Ready</span>
+    <span class="badge">🎙️ Neural Voiceover</span>
+    <span class="badge">🎵 Background Ducking</span>
+    <span class="badge">🏷️ Smart Tag Optimizer</span>
+    <span class="badge">⚡ Algorithm Max Reach</span>
 </div>
 """, unsafe_allow_html=True)
 
 st.write("")
 
-tabs = st.tabs(["✨ Generate New Reel", "📁 Video Library & Queue", "📘 Meta API Setup Guide"])
+tabs = st.tabs(["✨ Generate New Reel", "🏷️ Tags & Optimization", "📁 Video Library & Queue", "📘 Meta Setup Guide"])
 
 # TAB 1: GENERATE NEW REEL
 with tabs[0]:
@@ -151,17 +163,21 @@ with tabs[0]:
         user_prompt = st.text_area(
             "Topic / Prompt Description",
             value=default_prompts.get(selected_niche, ""),
-            height=120
+            height=110
         )
 
-        auto_post = st.checkbox("Auto-publish to Facebook/Instagram upon completion", value=False)
+        with st.expander("🏷️ Custom Tags & Account Mentions", expanded=False):
+            custom_tags_input = st.text_input("Custom Hashtags (comma separated)", value="#NDStudio, #NDTechHub, #Trending")
+            custom_mentions_input = st.text_input("Account Mentions (comma separated)", value="@NDTechHub")
+
+        auto_post = st.checkbox("Auto-publish to Facebook Page upon completion", value=False)
 
         generate_btn = st.button("🚀 Generate 9:16 Reel Now", type="primary", use_container_width=True)
 
     with col2:
         st.subheader("📺 Video Preview")
         preview_placeholder = st.empty()
-        status_box = st.empty()
+        cover_placeholder = st.empty()
 
     if generate_btn:
         if not user_prompt.strip():
@@ -177,8 +193,8 @@ with tabs[0]:
             try:
                 pipeline = ReelPipeline(
                     voice=selected_voice_id,
-                    gemini_key=gemini_key_input,
-                    groq_key=groq_key_input
+                    gemini_key=config.GEMINI_API_KEY,
+                    groq_key=config.GROQ_API_KEY
                 )
 
                 if meta_token_input:
@@ -193,6 +209,11 @@ with tabs[0]:
                     niche=selected_niche,
                     voice=selected_voice_id,
                     bg_music_path=selected_music_path,
+                    custom_tags=custom_tags_input,
+                    custom_mentions=custom_mentions_input,
+                    audio_name=opt_audio_name,
+                    share_to_feed=opt_share_feed,
+                    allow_remixing=opt_allow_remix,
                     auto_publish=auto_post,
                     progress_callback=update_progress
                 )
@@ -215,14 +236,14 @@ with tabs[0]:
                             )
 
                 # Show Script & Metadata Breakdown
-                st.subheader("📝 Generated Script & Social Copy")
+                st.subheader("📝 Optimized Caption & Tags")
                 script_data = result["script_data"]
 
                 meta_col1, meta_col2 = st.columns([1, 1])
                 with meta_col1:
-                    st.write("**Title:**", script_data.get("title", ""))
-                    st.write("**Caption & Hashtags:**")
-                    st.text_area("Caption", result["caption"], height=120)
+                    st.write("**Hook Title:**", script_data.get("title", ""))
+                    st.write("**SEO Description & Tags:**")
+                    st.text_area("Caption", result["caption"], height=160)
 
                 with meta_col2:
                     st.write("**Scene Breakdown:**")
@@ -240,8 +261,38 @@ with tabs[0]:
                 st.code(traceback.format_exc())
 
 
-# TAB 2: LIBRARY & QUEUE
+# TAB 2: TAGS & OPTIMIZATION SETTINGS
 with tabs[1]:
+    st.subheader("🏷️ Algorithmic Tag & Setting Optimization")
+    st.markdown("These settings ensure your reels are favored by Meta's recommendation algorithms for maximum reach.")
+
+    tcol1, tcol2 = st.columns([1, 1])
+
+    with tcol1:
+        st.write("### 📌 Niche Trending Hashtag Bundles")
+        for niche, tag_list in TagOptimizer.NICHE_TAG_BUNDLES.items():
+            with st.expander(f"📁 {niche} ({len(tag_list)} tags)"):
+                for t in tag_list:
+                    st.markdown(f'<span class="badge-opt">{t}</span>', unsafe_allow_html=True)
+
+    with tcol2:
+        st.write("### 🚀 Best Practices for Meta Reels Algorithm")
+        st.markdown("""
+        1. **Share to Main Feed Grid (`share_to_feed=true`)**:
+           - Reels shared to the main feed receive up to **300% more impressions** from current followers in the first 2 hours.
+        2. **Allow Remixing (`enable_remixing=true`)**:
+           - Facebook prioritizes videos that allow users to create remixes, stitches, and duets.
+        3. **Custom Branded Audio (`audio_name`)**:
+           - Naming your audio (e.g. *Original Audio • ND Studio*) allows other creators to click and use your sound, creating a viral snowball effect.
+        4. **Cover Frame Thumbnails**:
+           - The agent automatically extracts a vibrant frame from 1.0s to avoid black first-frame thumbnails.
+        5. **Balanced Tagging**:
+           - The optimizer mixes **broad viral tags** (`#viralreels`, `#explorepage`) with **specific micro-niche tags** for targeted viewer retention.
+        """)
+
+
+# TAB 3: LIBRARY & QUEUE
+with tabs[2]:
     st.subheader("📚 Generated Reels Library")
     queue = load_queue()
 
@@ -270,48 +321,33 @@ with tabs[1]:
                 with qcol2:
                     st.write("**Title:**", item.get("title"))
                     st.write("**Caption:**")
-                    st.text_area("Caption", item.get("caption", ""), height=100, key=f"cap_{item['id']}")
+                    st.text_area("Caption", item.get("caption", ""), height=120, key=f"cap_{item['id']}")
                     
                     st.write("**Direct Publishing:**")
                     p1, p2 = st.columns(2)
                     with p1:
-                        if st.button("📤 Post to Facebook", key=f"fb_{item['id']}"):
+                        if st.button("📤 Post to Facebook Page", key=f"fb_{item['id']}"):
                             pub = MetaPublisher(access_token=meta_token_input, facebook_page_id=fb_page_id_input)
-                            res = pub.publish_facebook_reel(Path(vpath), item.get("caption", ""))
+                            res = pub.publish_facebook_reel(
+                                video_path=Path(vpath),
+                                caption=item.get("caption", ""),
+                                title=item.get("title", ""),
+                                allow_remixing=True
+                            )
                             if res.get("success"):
-                                st.success("Published to Facebook Page!")
+                                st.success("✅ Successfully published to Facebook Page!")
                             else:
-                                st.error(res.get("error"))
+                                st.error(f"Failed: {res.get('error')}")
                     with p2:
-                        st.info("For Instagram, upload video to public URL or use Meta Graph Container.")
+                        st.info("Instagram publishing container active via Graph API.")
 
 
-# TAB 3: META API SETUP GUIDE
-with tabs[2]:
-    st.subheader("📘 100% Free Meta Graph API Setup Guide")
-    st.markdown("""
-    You can publish directly to Instagram Reels and Facebook Pages for free using the official Meta Graph API:
-
-    #### Step 1: Create a Meta for Developers Account (Free)
-    1. Go to [developers.facebook.com](https://developers.facebook.com) and log in with your Facebook account.
-    2. Click **Create App** ➔ Select **Business** or **Other** ➔ Choose **Instagram Graph API** and **Facebook Graph API**.
-
-    #### Step 2: Link Facebook Page and Instagram Account
-    1. Create a Facebook Page (e.g., *My Daily Reels*).
-    2. In your Instagram App Settings, switch your Instagram account to **Professional / Creator Account**.
-    3. Link your Instagram Account to your Facebook Page in Page Settings.
-
-    #### Step 3: Generate Access Token
-    1. Go to the [Graph API Explorer](https://developers.facebook.com/tools/explorer/).
-    2. Select your App and grant the following permissions:
-       - `pages_show_list`
-       - `pages_read_engagement`
-       - `pages_manage_posts`
-       - `instagram_basic`
-       - `instagram_content_publish`
-    3. Click **Generate Access Token** and copy it into the sidebar or `.env` file (`META_ACCESS_TOKEN`).
-
-    #### Step 4: Add IDs to `.env`
-    - `INSTAGRAM_ACCOUNT_ID`: Your Instagram Business Account ID.
-    - `FACEBOOK_PAGE_ID`: Your Facebook Page ID.
+# TAB 4: META API SETUP GUIDE
+with tabs[3]:
+    st.subheader("📘 Meta Graph API Configuration")
+    st.markdown(f"""
+    Your current connected accounts:
+    - **Facebook Page ID**: `{config.FACEBOOK_PAGE_ID}`
+    - **Instagram Account ID**: `{config.INSTAGRAM_ACCOUNT_ID}`
+    - **Access Token**: `{'Configured ✅' if config.META_ACCESS_TOKEN else 'Missing ❌'}`
     """)
