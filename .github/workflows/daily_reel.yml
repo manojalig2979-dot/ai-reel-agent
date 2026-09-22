@@ -2,8 +2,8 @@ name: Daily AI Reel Generator & Auto-Publisher
 
 on:
   schedule:
-    # Runs daily at 04:00 UTC (9:30 AM IST)
-    - cron: '0 4 * * *'
+    # Runs daily at 15:30 UTC (9:00 PM IST)
+    - cron: '30 15 * * *'
   workflow_dispatch:
     inputs:
       custom_topic:

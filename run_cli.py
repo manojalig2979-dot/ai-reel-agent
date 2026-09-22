@@ -33,7 +33,7 @@ def main():
     parser.add_argument("--audio-name", type=str, default="Original Audio • ND Studio", help="Custom audio title for Instagram")
     parser.add_argument("--publish", action="store_true", help="Auto-publish to Meta Graph API")
     parser.add_argument("--schedule", action="store_true", help="Start background daily scheduler")
-    parser.add_argument("--time", type=str, default="09:00", help="Daily schedule time (HH:MM format)")
+    parser.add_argument("--time", type=str, default="21:00", help="Daily schedule time in HH:MM format (default: 21:00 for 9:00 PM)")
 
     args = parser.parse_args()
 
@@ -41,10 +41,11 @@ def main():
         try:
             hour, minute = map(int, args.time.split(":"))
         except Exception:
-            hour, minute = 9, 0
+            hour, minute = 21, 0
 
         scheduler = ReelScheduler(voice=args.voice)
         scheduler.start_schedule(hour=hour, minute=minute)
+        safe_print(f"Daily Scheduler active! Will generate and post every day at {hour:02d}:{minute:02d}.")
         safe_print("Press Ctrl+C to exit scheduler.")
         try:
             import time
