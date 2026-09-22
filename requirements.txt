@@ -1,0 +1,13 @@
+# AI Reel Generator & Auto-Publisher Dependencies
+edge-tts>=6.1.12
+moviepy>=1.0.3
+pillow>=10.0.0
+numpy>=1.24.0
+requests>=2.31.0
+google-generativeai>=0.8.0
+groq>=0.9.0
+python-dotenv>=1.0.0
+streamlit>=1.35.0
+apscheduler>=3.10.4
+imageio-ffmpeg>=0.4.9
+imageio>=2.34.0

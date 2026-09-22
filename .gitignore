@@ -1,0 +1,31 @@
+# Environment variables & secrets
+.env
+
+# Generated Output & Video Files (Large binaries)
+output/
+temp_scenes/
+*.mp4
+*.wav
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
