@@ -25,9 +25,12 @@ st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
     
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    .stDeployButton {display: none;}
+    #MainMenu {visibility: hidden !important; display: none !important;}
+    footer {visibility: hidden !important; display: none !important;}
+    header[data-testid="stHeader"] {visibility: hidden !important; height: 0px !important;}
+    [data-testid="stToolbar"] {visibility: hidden !important; display: none !important;}
+    [data-testid="stDecoration"] {display: none !important;}
+    .stDeployButton, [data-testid="stDeployButton"], button[title*="Deploy"] {display: none !important; visibility: hidden !important;}
     
     /* Ensure sidebar is prominent, clean, and never permanently hidden */
     section[data-testid="stSidebar"] {
