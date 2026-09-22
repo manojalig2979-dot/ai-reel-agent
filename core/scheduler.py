@@ -1,8 +1,10 @@
 import time
 from typing import List, Optional
 from datetime import datetime
+from pathlib import Path
 import config
 from core.pipeline import ReelPipeline
+from core.weekly_planner import WeeklyPlanner
 
 try:
     from apscheduler.schedulers.background import BackgroundScheduler
@@ -14,46 +16,47 @@ except ImportError:
 
 class ReelScheduler:
     """
-    Automated Daily Scheduler for generating and publishing reels on a recurring timer.
+    Automated Daily Scheduler powered by the 7-Day Weekly Content Planner.
     """
-    DEFAULT_TOPIC_ROTATION = [
-        ("Mind-Blowing Space Secrets", "Science & Space"),
-        ("Unstoppable Morning Mindset & Success Principles", "Motivation"),
-        ("Future Technology & AI Breakthroughs You Didn't Know About", "Technology"),
-        ("Untold Dark Mysteries of Ancient History", "History"),
-        ("Psychological Tricks That Work Every Time", "Psychology & Life Hacks"),
-        ("Millionaire Habits That Changed Everything", "Finance & Wealth"),
-        ("Earth's Most Mysterious Unexplained Locations", "Nature & Wonders")
-    ]
-
     def __init__(self, voice: str = config.DEFAULT_VOICE):
         self.pipeline = ReelPipeline(voice=voice)
         self.scheduler = BackgroundScheduler() if BackgroundScheduler else None
-        self.topic_index = 0
 
     def run_daily_job(self) -> None:
-        """Executes the daily automated reel generation."""
-        topic, niche = self.DEFAULT_TOPIC_ROTATION[self.topic_index % len(self.DEFAULT_TOPIC_ROTATION)]
-        self.topic_index += 1
-        
-        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        """Executes the daily automated reel generation matching today's weekly plan."""
+        now = datetime.now()
+        day_name = now.strftime("%A")
+        now_str = now.strftime("%Y-%m-%d %H:%M:%S")
+
+        today_plan = WeeklyPlanner.get_todays_prompt(day_name)
+        topic = today_plan["topic"]
+        niche = today_plan["niche"]
+        music_name = today_plan.get("music", "motivation")
+        voice_id = today_plan.get("voice", config.DEFAULT_VOICE)
+
+        music_file = config.MUSIC_DIR / f"{music_name}.mp3" if music_name != "none" else None
+
         print(f"\n==========================================")
         print(f"[Scheduler] Triggering daily Reel job at {now_str}")
-        print(f"[Scheduler] Topic: '{topic}' | Niche: '{niche}'")
+        print(f"[Scheduler] Day   : {day_name}")
+        print(f"[Scheduler] Niche : {niche}")
+        print(f"[Scheduler] Topic : '{topic}'")
         print(f"==========================================\n")
 
         try:
             result = self.pipeline.generate_full_reel(
                 prompt=topic,
                 niche=niche,
+                voice=voice_id,
+                bg_music_path=music_file,
                 auto_publish=True
             )
             print(f"[Scheduler] [SUCCESS] Daily reel completed! Saved to {result['video_path']}")
         except Exception as e:
             print(f"[Scheduler] [ERROR] Error in daily job: {e}")
 
-    def start_schedule(self, hour: int = 9, minute: int = 0) -> None:
-        """Starts background daily scheduler at specified hour and minute."""
+    def start_schedule(self, hour: int = 21, minute: int = 0) -> None:
+        """Starts background daily scheduler at specified hour and minute (default 21:00 / 9:00 PM)."""
         if not self.scheduler:
             raise ImportError("APScheduler is not installed.")
 
@@ -70,5 +73,5 @@ class ReelScheduler:
 
 if __name__ == "__main__":
     scheduler = ReelScheduler()
-    print("Testing manual run of daily job...")
+    print("Testing manual run of daily job with today's weekly planner prompt...")
     scheduler.run_daily_job()

@@ -2,17 +2,19 @@ import os
 import json
 import time
 from pathlib import Path
+from datetime import datetime
 import streamlit as st
 import config
 from core.pipeline import ReelPipeline
 from core.publisher import MetaPublisher
 from core.tag_engine import TagOptimizer
+from core.weekly_planner import WeeklyPlanner
 
 # Check if custom logo exists
 has_custom_logo = config.LOGO_PATH.exists()
 
 st.set_page_config(
-    page_title="ND Reel Studio & Algorithmic Auto-Publisher",
+    page_title="ND Reel Studio & 7-Day Auto-Publisher",
     page_icon=str(config.LOGO_PATH) if has_custom_logo else "🎬",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -62,6 +64,13 @@ st.markdown("""
         padding: 14px;
         margin-bottom: 12px;
     }
+    .day-card {
+        background-color: #131720;
+        border: 1px solid #2B313E;
+        border-radius: 10px;
+        padding: 16px;
+        margin-bottom: 16px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -94,7 +103,7 @@ with st.sidebar:
         st.image("https://img.icons8.com/3d-fluency/94/video-editing.png", width=64)
 
     st.title("ND Reel Agent")
-    st.caption("Algorithm-Optimized AI Studio")
+    st.caption("7-Day Automated AI Studio")
 
     st.subheader("🎙️ Voice Settings")
     selected_voice_label = st.selectbox(
@@ -112,12 +121,12 @@ with st.sidebar:
 
     st.divider()
     st.subheader("🎨 Branding & Watermark")
-    opt_watermark = st.checkbox("Overlay ND Reel Logo Watermark", value=has_custom_logo, help="Adds subtle branded watermark badge to protect your content and build brand authority.")
+    opt_watermark = st.checkbox("Overlay ND Reel Logo Watermark", value=has_custom_logo, help="Adds subtle branded watermark badge to protect your content.")
 
     st.divider()
     st.subheader("⚡ Meta Optimization Settings")
-    opt_share_feed = st.checkbox("Instagram: Share to Main Feed Grid", value=True, help="Distributes video to both Reels tab and Profile Grid for 3x reach.")
-    opt_allow_remix = st.checkbox("Facebook: Allow Remixing & Stitches", value=True, help="Allows audience to remix your video, heavily boosted by FB algorithm.")
+    opt_share_feed = st.checkbox("Instagram: Share to Main Feed Grid", value=True)
+    opt_allow_remix = st.checkbox("Facebook: Allow Remixing & Stitches", value=True)
     opt_audio_name = st.text_input("Custom Branded Audio Name", value="Original Audio • ND Studio")
 
     st.divider()
@@ -133,20 +142,20 @@ with hcol1:
     if has_custom_logo:
         st.image(str(config.LOGO_PATH), width=80)
 with hcol2:
-    st.markdown('<div class="main-title">🎬 ND Reel Studio & Auto-Publisher</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-title">🎬 ND Reel Studio & 7-Day Auto-Publisher</div>', unsafe_allow_html=True)
     st.markdown("""
     <div>
         <span class="badge">🚀 100% Free Tier</span>
+        <span class="badge">📅 7-Day Content Plan</span>
         <span class="badge">🎙️ Neural Voiceover</span>
         <span class="badge">🎵 Music Ducking</span>
         <span class="badge">🎨 ND Branding</span>
-        <span class="badge">⚡ Meta Algorithm Ready</span>
     </div>
     """, unsafe_allow_html=True)
 
 st.write("")
 
-tabs = st.tabs(["✨ Generate New Reel", "🏷️ Tags & Optimization", "📁 Video Library & Queue", "📘 Meta Setup Guide"])
+tabs = st.tabs(["✨ Generate Reel", "📅 7-Day Weekly Planner", "🏷️ Tags & Optimization", "📁 Video Library", "📘 Meta Setup"])
 
 # TAB 1: GENERATE NEW REEL
 with tabs[0]:
@@ -279,11 +288,60 @@ with tabs[0]:
                 st.code(traceback.format_exc())
 
 
-# TAB 2: TAGS & OPTIMIZATION SETTINGS
+# TAB 2: 7-DAY WEEKLY PLANNER
 with tabs[1]:
-    st.subheader("🏷️ Algorithmic Tag & Setting Optimization")
-    st.markdown("These settings ensure your reels are favored by Meta's recommendation algorithms for maximum reach.")
+    st.subheader("📅 7-Day Weekly Content Calendar")
+    st.markdown("Configure your prompts for Monday through Sunday. The agent will automatically generate and post each day's topic at **09:00 PM**!")
 
+    weekly_schedule = WeeklyPlanner.load_schedule()
+    days_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    current_day = datetime.now().strftime("%A")
+
+    today_box = st.info(f"📆 **Today is {current_day}** — Scheduled Topic: *'{weekly_schedule.get(current_day, {}).get('topic', '')}'*")
+
+    updated_schedule = {}
+
+    for day in days_of_week:
+        day_data = weekly_schedule.get(day, {})
+        is_today = (day == current_day)
+        
+        day_header = f"🗓️ **{day}** {'✨ (TODAY)' if is_today else ''}"
+        
+        with st.expander(day_header, expanded=is_today):
+            dcol1, dcol2 = st.columns([0.7, 0.3])
+            
+            with dcol1:
+                t_val = st.text_area(f"Prompt / Topic for {day}", value=day_data.get("topic", ""), height=80, key=f"topic_{day}")
+            
+            with dcol2:
+                n_val = st.selectbox(
+                    f"Niche ({day})",
+                    ["Science & Space", "Motivation & Mindset", "AI & Future Tech", "Dark History & Mysteries", "Psychology Facts", "Business & Wealth"],
+                    index=max(0, ["Science & Space", "Motivation & Mindset", "AI & Future Tech", "Dark History & Mysteries", "Psychology Facts", "Business & Wealth"].index(day_data.get("niche", "Science & Space")) if day_data.get("niche") in ["Science & Space", "Motivation & Mindset", "AI & Future Tech", "Dark History & Mysteries", "Psychology Facts", "Business & Wealth"] else 0),
+                    key=f"niche_{day}"
+                )
+                m_val = st.selectbox(
+                    f"Music ({day})",
+                    ["suspense", "motivation", "lofi", "cyberpunk", "none"],
+                    index=max(0, ["suspense", "motivation", "lofi", "cyberpunk", "none"].index(day_data.get("music", "motivation")) if day_data.get("music") in ["suspense", "motivation", "lofi", "cyberpunk", "none"] else 1),
+                    key=f"music_{day}"
+                )
+
+            updated_schedule[day] = {
+                "niche": n_val,
+                "topic": t_val,
+                "music": m_val,
+                "voice": day_data.get("voice", config.DEFAULT_VOICE)
+            }
+
+    if st.button("💾 Save 7-Day Weekly Schedule", type="primary", use_container_width=True):
+        WeeklyPlanner.save_schedule(updated_schedule)
+        st.success("✅ Weekly schedule saved successfully! Your daily 9:00 PM automation will now use these prompts.")
+
+
+# TAB 3: TAGS & OPTIMIZATION SETTINGS
+with tabs[2]:
+    st.subheader("🏷️ Algorithmic Tag & Setting Optimization")
     tcol1, tcol2 = st.columns([1, 1])
 
     with tcol1:
@@ -297,18 +355,16 @@ with tabs[1]:
         st.write("### 🚀 Best Practices for Meta Reels Algorithm")
         st.markdown("""
         1. **Creator Watermark / Branding**:
-           - Meta **rewards** original creator badges like your ND logo watermark, protecting your IP while boosting brand recognition.
+           - Meta **rewards** original creator badges like your ND logo watermark.
         2. **Share to Main Feed Grid (`share_to_feed=true`)**:
-           - Reels shared to the main feed receive up to **300% more impressions** from current followers in the first 2 hours.
+           - Reels shared to the main feed receive up to **300% more impressions**.
         3. **Allow Remixing (`enable_remixing=true`)**:
-           - Facebook prioritizes videos that allow users to create remixes, stitches, and duets.
-        4. **Custom Branded Audio (`audio_name`)**:
-           - Naming your audio (e.g. *Original Audio • ND Studio*) allows other creators to click and use your sound.
+           - Facebook prioritizes videos that allow users to create remixes and stitches.
         """)
 
 
-# TAB 3: LIBRARY & QUEUE
-with tabs[2]:
+# TAB 4: LIBRARY & QUEUE
+with tabs[3]:
     st.subheader("📚 Generated Reels Library")
     queue = load_queue()
 
@@ -358,11 +414,11 @@ with tabs[2]:
                         st.info("Instagram publishing container active via Graph API.")
 
 
-# TAB 4: META API SETUP GUIDE
-with tabs[3]:
+# TAB 5: META API SETUP GUIDE
+with tabs[4]:
     st.subheader("📘 Meta Graph API Configuration")
     st.markdown(f"""
-    Your current connected accounts:
+    Your connected accounts:
     - **Facebook Page**: `ND Studio by NDTechHub` (`{config.FACEBOOK_PAGE_ID}`)
     - **Instagram Account ID**: `{config.INSTAGRAM_ACCOUNT_ID}`
     - **Access Token**: `{'Configured ✅' if config.META_ACCESS_TOKEN else 'Missing ❌'}`
