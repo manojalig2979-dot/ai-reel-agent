@@ -5,8 +5,8 @@ from dotenv import load_dotenv
 # Base Directory
 BASE_DIR = Path(__file__).resolve().parent
 
-# Load .env file if present
-load_dotenv(BASE_DIR / ".env")
+# Load .env file if present (override=True ensures latest .env values take effect)
+load_dotenv(BASE_DIR / ".env", override=True)
 
 # Directory Paths
 OUTPUT_DIR = BASE_DIR / "output"
