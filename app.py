@@ -5,6 +5,13 @@ from pathlib import Path
 from datetime import datetime
 import streamlit as st
 import config
+import importlib
+import core.subtitle_engine
+import core.video_engine
+import core.pipeline
+importlib.reload(core.subtitle_engine)
+importlib.reload(core.video_engine)
+importlib.reload(core.pipeline)
 from core.pipeline import ReelPipeline
 from core.publisher import MetaPublisher
 from core.tag_engine import TagOptimizer

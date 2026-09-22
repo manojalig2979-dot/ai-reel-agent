@@ -43,7 +43,8 @@ class ReelPipeline:
         share_to_feed: bool = True,
         allow_remixing: bool = True,
         auto_publish: bool = False,
-        progress_callback: Optional[Callable[[str, float], None]] = None
+        progress_callback: Optional[Callable[[str, float], None]] = None,
+        **kwargs
     ) -> Dict[str, Any]:
         """
         Executes the full automated reel creation lifecycle with logo watermark & algorithmic optimization.
@@ -182,7 +183,8 @@ class ReelPipeline:
         share_to_feed: bool = True,
         allow_remixing: bool = True,
         auto_publish: bool = False,
-        progress_callback: Optional[Callable[[str, float], None]] = None
+        progress_callback: Optional[Callable[[str, float], None]] = None,
+        **kwargs
     ) -> Dict[str, Any]:
         """
         Executes dedicated poetry reel creation: structures user poem into scenes,
