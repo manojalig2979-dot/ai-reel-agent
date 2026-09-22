@@ -32,6 +32,9 @@ class ReelPipeline:
         niche: str = "General",
         voice: Optional[str] = None,
         bg_music_path: Optional[Path] = None,
+        text_position: str = "bottom",
+        text_animation: str = "static",
+        text_style: str = "soft_pill",
         custom_tags: Optional[str] = None,
         custom_mentions: Optional[str] = None,
         enable_watermark: bool = True,
@@ -108,6 +111,9 @@ class ReelPipeline:
             scenes_data=processed_scenes,
             output_path=final_video_path,
             bg_music_path=bg_music_path,
+            text_position=text_position,
+            text_animation=text_animation,
+            text_style=text_style,
             watermark_path=active_watermark
         )
 
@@ -165,6 +171,9 @@ class ReelPipeline:
         art_style: str = "Cinematic 8K",
         voice: Optional[str] = None,
         bg_music_path: Optional[Path] = None,
+        text_position: str = "bottom",
+        text_animation: str = "static",
+        text_style: str = "soft_pill",
         custom_tags: Optional[str] = None,
         custom_mentions: Optional[str] = None,
         enable_watermark: bool = True,
@@ -252,6 +261,9 @@ class ReelPipeline:
             output_path=final_video_path,
             bg_music_path=bg_music_path,
             bg_music_volume=0.15,
+            text_position=text_position,
+            text_animation=text_animation,
+            text_style=text_style,
             watermark_path=active_watermark
         )
 

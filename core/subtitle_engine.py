@@ -1,6 +1,6 @@
 import textwrap
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 import config
@@ -11,7 +11,7 @@ class SubtitleEngine:
         self.width = width
         self.height = height
 
-    def _get_font(self, size: int = 56):
+    def _get_font(self, size: int = 46):
         """Find or load a bold font with full Unicode/Hindi/Devanagari support."""
         font_candidates = [
             # 1. Bundled High-Retention Project Fonts
@@ -47,35 +47,63 @@ class SubtitleEngine:
     def create_subtitle_image(
         self,
         text: str,
+        position: str = "bottom",
         highlight_color: str = "#FFE600",
         text_color: str = "#FFFFFF",
         stroke_color: str = "#000000",
-        stroke_width: int = 4
+        stroke_width: int = 3,
+        bg_style: str = "soft_pill"
     ) -> np.ndarray:
         """
-        Renders a transparent RGBA image with styled high-retention vertical subtitles.
-        Uses Pillow to ensure 100% compatibility across Windows and Linux.
+        Renders a transparent RGBA image with styled, non-intrusive subtitles.
+        Text dynamically scales and adapts to never block or overwhelm the background artwork.
+        
+        position options: 'bottom' (default), 'center', 'top'
+        bg_style options: 'soft_pill' (subtle semi-transparent pill), 'clean_shadow' (stroke only, maximum visual visibility)
         """
-        # Create transparent canvas
         img = Image.new("RGBA", (self.width, self.height), (0, 0, 0, 0))
         draw = ImageDraw.Draw(img)
-        font = self._get_font(size=62)
 
-        # Wrap text nicely for 9:16 vertical reels (upper only if Latin/English)
+        # Wrap text nicely for 9:16 vertical reels
         display_text = text.upper() if text.isascii() else text
-        wrapped_lines = textwrap.wrap(display_text, width=24)
+        raw_lines = [l.strip() for l in display_text.split("\n") if l.strip()]
+        
+        wrapped_lines = []
+        for line in raw_lines:
+            wrapped = textwrap.wrap(line, width=28)
+            wrapped_lines.extend(wrapped)
+
         if not wrapped_lines:
             return np.array(img)
 
-        # Calculate bounding box and height
-        line_height = 84
-        total_text_height = len(wrapped_lines) * line_height
+        # Dynamically calculate font size and line height based on text density
+        line_count = len(wrapped_lines)
+        if line_count <= 2:
+            font_size = 48
+            line_height = 68
+        elif line_count <= 4:
+            font_size = 40
+            line_height = 56
+        else:
+            font_size = 34
+            line_height = 46
 
-        # Position subtitles in the middle-lower third (Y around 68-75% of screen)
-        start_y = int(self.height * 0.72) - (total_text_height // 2)
+        font = self._get_font(size=font_size)
+        total_text_height = line_count * line_height
+
+        # Position calculation
+        pos_lower = position.lower()
+        if "top" in pos_lower:
+            start_y = int(self.height * 0.18) - (total_text_height // 2)
+        elif "center" in pos_lower or "middle" in pos_lower:
+            start_y = int(self.height * 0.50) - (total_text_height // 2)
+        else:
+            # Bottom third (default)
+            start_y = int(self.height * 0.76) - (total_text_height // 2)
+
+        start_y = max(60, min(self.height - total_text_height - 60, start_y))
 
         for i, line in enumerate(wrapped_lines):
-            # Compute text width
             bbox = draw.textbbox((0, 0), line, font=font, stroke_width=stroke_width)
             text_w = bbox[2] - bbox[0]
             text_h = bbox[3] - bbox[1]
@@ -83,15 +111,15 @@ class SubtitleEngine:
             x = (self.width - text_w) // 2
             y = start_y + (i * line_height)
 
-            # Draw background pill/box for crisp contrast
-            pad_x = 24
-            pad_y = 10
-            box_rect = [x - pad_x, y - pad_y, x + text_w + pad_x, y + text_h + pad_y]
-            
-            # Semi-transparent dark pill background
-            draw.rounded_rectangle(box_rect, radius=16, fill=(10, 10, 15, 190))
+            # Draw subtle backdrop only if requested
+            if bg_style == "soft_pill":
+                pad_x = 18
+                pad_y = 6
+                box_rect = [x - pad_x, y - pad_y, x + text_w + pad_x, y + text_h + pad_y]
+                # Lightweight translucent dark pill (alpha=130 so background image is clearly visible)
+                draw.rounded_rectangle(box_rect, radius=12, fill=(10, 10, 16, 130))
 
-            # Draw text with dark border stroke
+            # Draw text with dark border stroke for razor-sharp legibility
             draw.text(
                 (x, y),
                 line,
@@ -106,7 +134,7 @@ class SubtitleEngine:
 
 if __name__ == "__main__":
     engine = SubtitleEngine()
-    arr = engine.create_subtitle_image("DID YOU KNOW THIS SECRET?")
+    arr = engine.create_subtitle_image("मेरी खामोशियाँ भी एक दास्तान कहती हैं।", position="bottom")
     img = Image.fromarray(arr)
     test_out = config.OUTPUT_DIR / "test_subtitle.png"
     img.save(test_out)

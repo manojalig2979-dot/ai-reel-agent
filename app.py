@@ -371,6 +371,62 @@ with tabs[1]:
             poem_voice_label = st.selectbox("Recitation Voice", options=list(config.VOICE_OPTIONS.keys()), index=0, key="poem_voice_select")
             poem_voice_id = config.VOICE_OPTIONS[poem_voice_label]
 
+        st.markdown("##### 🖋️ Text Placement, Animation & Typography")
+        p_text1, p_text2, p_text3 = st.columns([0.34, 0.33, 0.33])
+        with p_text1:
+            poem_text_pos_label = st.selectbox(
+                "Text Position on Screen",
+                [
+                    "Bottom Subtitles (100% Background Visual)",
+                    "Center Floating (Soulful Shayari)",
+                    "Top Header (Minimalist Quote)"
+                ],
+                index=0,
+                key="poem_text_pos"
+            )
+            pos_map = {
+                "Bottom Subtitles (100% Background Visual)": "bottom",
+                "Center Floating (Soulful Shayari)": "center",
+                "Top Header (Minimalist Quote)": "top"
+            }
+            selected_pos = pos_map.get(poem_text_pos_label, "bottom")
+
+        with p_text2:
+            poem_text_anim_label = st.selectbox(
+                "Text Motion / Animation",
+                [
+                    "Static Clean (Stationary, Non-intrusive)",
+                    "Scroll Bottom to Top (Slow Poetic Rise)",
+                    "Scroll Top to Bottom (Slow Poetic Fall)",
+                    "Subtle Float (Gentle 50px Rise)"
+                ],
+                index=0,
+                key="poem_text_anim"
+            )
+            anim_map = {
+                "Static Clean (Stationary, Non-intrusive)": "static",
+                "Scroll Bottom to Top (Slow Poetic Rise)": "scroll_up",
+                "Scroll Top to Bottom (Slow Poetic Fall)": "scroll_down",
+                "Subtle Float (Gentle 50px Rise)": "float_up"
+            }
+            selected_anim = anim_map.get(poem_text_anim_label, "static")
+
+        with p_text3:
+            poem_style_label = st.selectbox(
+                "Subtitle Backdrop Style",
+                [
+                    "Soft Translucent Pill (Aesthetic & Legible)",
+                    "Clean Stroke Only (No Box, Full Visibility)"
+                ],
+                index=0,
+                key="poem_style_select"
+            )
+            style_map = {
+                "Soft Translucent Pill (Aesthetic & Legible)": "soft_pill",
+                "Clean Stroke Only (No Box, Full Visibility)": "clean_shadow"
+            }
+            selected_text_style = style_map.get(poem_style_label, "soft_pill")
+
         sample_poem = (
             "कभी कभी कुछ अल्फ़ाज़ खामोशियों में बेहतर लगते हैं,\n"
             "जैसे रेत पर लिखी दास्तानें हवाओं से संवरती हैं।\n"
@@ -425,6 +481,9 @@ with tabs[1]:
                     art_style=poem_art_style,
                     voice=poem_voice_id,
                     bg_music_path=poem_music_path,
+                    text_position=selected_pos,
+                    text_animation=selected_anim,
+                    text_style=selected_text_style,
                     enable_watermark=opt_watermark,
                     watermark_path=config.LOGO_PATH if opt_watermark else None,
                     share_to_feed=opt_share_feed,
