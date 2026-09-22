@@ -47,11 +47,12 @@ class VideoEngine:
         subtitle_png_path: Path,
         output_scene_path: Path,
         duration: float,
-        scene_idx: int = 0
+        scene_idx: int = 0,
+        watermark_path: Optional[Path] = None,
+        watermark_opacity: float = 0.88
     ) -> Path:
         """
-        Renders an animated vertical scene in ~1 second using direct hardware-accelerated FFmpeg.
-        Applies smooth Ken Burns zoompan + alpha subtitle overlay.
+        Renders an animated vertical scene with Ken Burns zoom + subtitles + creator logo watermark.
         """
         frames = int(duration * self.fps)
         zoom_speed = 0.0012
@@ -65,30 +66,59 @@ class VideoEngine:
             x_expr = "iw/2-(iw/zoom/2)"
             y_expr = "ih/2-(ih/zoom/2)"
 
-        filter_complex = (
-            f"[0:v]scale=1200:2133:force_original_aspect_ratio=increase,crop=1200:2133,"
-            f"zoompan=z='{zoom_expr}':d={frames}:x='{x_expr}':y='{y_expr}':s={self.width}x{self.height}:fps={self.fps}[bg];"
-            f"[1:v]scale={self.width}:{self.height}[sub];"
-            f"[bg][sub]overlay=0:0:format=auto[v]"
-        )
+        has_watermark = watermark_path and Path(watermark_path).exists()
 
-        cmd = [
-            self.ffmpeg_exe,
-            "-y",
-            "-loop", "1", "-i", str(image_path),
-            "-i", str(subtitle_png_path),
-            "-i", str(audio_path),
-            "-filter_complex", filter_complex,
-            "-map", "[v]",
-            "-map", "2:a",
-            "-c:v", "libx264",
-            "-preset", "ultrafast",
-            "-pix_fmt", "yuv420p",
-            "-c:a", "aac",
-            "-b:a", "192k",
-            "-t", f"{duration:.3f}",
-            str(output_scene_path)
-        ]
+        if has_watermark:
+            filter_complex = (
+                f"[0:v]scale=1200:2133:force_original_aspect_ratio=increase,crop=1200:2133,"
+                f"zoompan=z='{zoom_expr}':d={frames}:x='{x_expr}':y='{y_expr}':s={self.width}x{self.height}:fps={self.fps}[bg];"
+                f"[1:v]scale={self.width}:{self.height}[sub];"
+                f"[3:v]scale=130:130,format=rgba,colorchannelmixer=aa={watermark_opacity}[wm];"
+                f"[bg][sub]overlay=0:0[v1];"
+                f"[v1][wm]overlay=48:64:format=auto[v]"
+            )
+            cmd = [
+                self.ffmpeg_exe,
+                "-y",
+                "-loop", "1", "-i", str(image_path),
+                "-i", str(subtitle_png_path),
+                "-i", str(audio_path),
+                "-i", str(watermark_path),
+                "-filter_complex", filter_complex,
+                "-map", "[v]",
+                "-map", "2:a",
+                "-c:v", "libx264",
+                "-preset", "ultrafast",
+                "-pix_fmt", "yuv420p",
+                "-c:a", "aac",
+                "-b:a", "192k",
+                "-t", f"{duration:.3f}",
+                str(output_scene_path)
+            ]
+        else:
+            filter_complex = (
+                f"[0:v]scale=1200:2133:force_original_aspect_ratio=increase,crop=1200:2133,"
+                f"zoompan=z='{zoom_expr}':d={frames}:x='{x_expr}':y='{y_expr}':s={self.width}x{self.height}:fps={self.fps}[bg];"
+                f"[1:v]scale={self.width}:{self.height}[sub];"
+                f"[bg][sub]overlay=0:0:format=auto[v]"
+            )
+            cmd = [
+                self.ffmpeg_exe,
+                "-y",
+                "-loop", "1", "-i", str(image_path),
+                "-i", str(subtitle_png_path),
+                "-i", str(audio_path),
+                "-filter_complex", filter_complex,
+                "-map", "[v]",
+                "-map", "2:a",
+                "-c:v", "libx264",
+                "-preset", "ultrafast",
+                "-pix_fmt", "yuv420p",
+                "-c:a", "aac",
+                "-b:a", "192k",
+                "-t", f"{duration:.3f}",
+                str(output_scene_path)
+            ]
 
         subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
         return output_scene_path
@@ -98,10 +128,11 @@ class VideoEngine:
         scenes_data: List[Dict[str, Any]],
         output_path: Path,
         bg_music_path: Optional[Path] = None,
-        bg_music_volume: float = 0.12
+        bg_music_volume: float = 0.12,
+        watermark_path: Optional[Path] = None
     ) -> Path:
         """
-        Renders all scenes with Ken Burns + subtitles and concatenates into final MP4 with optional background music.
+        Renders all scenes with Ken Burns + subtitles + watermark and concatenates into final MP4 with optional music.
         """
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -124,7 +155,7 @@ class VideoEngine:
             sub_png = temp_dir / f"sub_{idx}.png"
             Image.fromarray(sub_arr).save(sub_png)
 
-            # 3. Render Scene MP4
+            # 3. Render Scene MP4 with watermark
             scene_mp4 = temp_dir / f"scene_{idx}.mp4"
             self.render_scene_ffmpeg(
                 image_path=img_path,
@@ -132,7 +163,8 @@ class VideoEngine:
                 subtitle_png_path=sub_png,
                 output_scene_path=scene_mp4,
                 duration=duration,
-                scene_idx=idx
+                scene_idx=idx,
+                watermark_path=watermark_path
             )
             scene_files.append(scene_mp4)
 

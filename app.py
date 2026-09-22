@@ -8,9 +8,12 @@ from core.pipeline import ReelPipeline
 from core.publisher import MetaPublisher
 from core.tag_engine import TagOptimizer
 
+# Check if custom logo exists
+has_custom_logo = config.LOGO_PATH.exists()
+
 st.set_page_config(
-    page_title="AI Reel Studio & Algorithmic Auto-Publisher",
-    page_icon="🎬",
+    page_title="ND Reel Studio & Algorithmic Auto-Publisher",
+    page_icon=str(config.LOGO_PATH) if has_custom_logo else "🎬",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -85,9 +88,13 @@ def get_available_music_tracks():
 
 # Sidebar Configuration
 with st.sidebar:
-    st.image("https://img.icons8.com/3d-fluency/94/video-editing.png", width=64)
-    st.title("Agent Settings")
-    st.caption("Algorithm-Optimized AI Reel Generator")
+    if has_custom_logo:
+        st.image(str(config.LOGO_PATH), width=100)
+    else:
+        st.image("https://img.icons8.com/3d-fluency/94/video-editing.png", width=64)
+
+    st.title("ND Reel Agent")
+    st.caption("Algorithm-Optimized AI Studio")
 
     st.subheader("🎙️ Voice Settings")
     selected_voice_label = st.selectbox(
@@ -104,6 +111,10 @@ with st.sidebar:
     selected_music_path = music_tracks[selected_music_label]
 
     st.divider()
+    st.subheader("🎨 Branding & Watermark")
+    opt_watermark = st.checkbox("Overlay ND Reel Logo Watermark", value=has_custom_logo, help="Adds subtle branded watermark badge to protect your content and build brand authority.")
+
+    st.divider()
     st.subheader("⚡ Meta Optimization Settings")
     opt_share_feed = st.checkbox("Instagram: Share to Main Feed Grid", value=True, help="Distributes video to both Reels tab and Profile Grid for 3x reach.")
     opt_allow_remix = st.checkbox("Facebook: Allow Remixing & Stitches", value=True, help="Allows audience to remix your video, heavily boosted by FB algorithm.")
@@ -117,16 +128,21 @@ with st.sidebar:
 
 
 # Top Hero Header
-st.markdown('<div class="main-title">🎬 AI Reel Studio & Algorithmic Auto-Publisher</div>', unsafe_allow_html=True)
-st.markdown("""
-<div>
-    <span class="badge">🚀 100% Free Tier</span>
-    <span class="badge">🎙️ Neural Voiceover</span>
-    <span class="badge">🎵 Background Ducking</span>
-    <span class="badge">🏷️ Smart Tag Optimizer</span>
-    <span class="badge">⚡ Algorithm Max Reach</span>
-</div>
-""", unsafe_allow_html=True)
+hcol1, hcol2 = st.columns([0.15, 0.85])
+with hcol1:
+    if has_custom_logo:
+        st.image(str(config.LOGO_PATH), width=80)
+with hcol2:
+    st.markdown('<div class="main-title">🎬 ND Reel Studio & Auto-Publisher</div>', unsafe_allow_html=True)
+    st.markdown("""
+    <div>
+        <span class="badge">🚀 100% Free Tier</span>
+        <span class="badge">🎙️ Neural Voiceover</span>
+        <span class="badge">🎵 Music Ducking</span>
+        <span class="badge">🎨 ND Branding</span>
+        <span class="badge">⚡ Meta Algorithm Ready</span>
+    </div>
+    """, unsafe_allow_html=True)
 
 st.write("")
 
@@ -211,6 +227,8 @@ with tabs[0]:
                     bg_music_path=selected_music_path,
                     custom_tags=custom_tags_input,
                     custom_mentions=custom_mentions_input,
+                    enable_watermark=opt_watermark,
+                    watermark_path=config.LOGO_PATH if opt_watermark else None,
                     audio_name=opt_audio_name,
                     share_to_feed=opt_share_feed,
                     allow_remixing=opt_allow_remix,
@@ -278,16 +296,14 @@ with tabs[1]:
     with tcol2:
         st.write("### 🚀 Best Practices for Meta Reels Algorithm")
         st.markdown("""
-        1. **Share to Main Feed Grid (`share_to_feed=true`)**:
+        1. **Creator Watermark / Branding**:
+           - Meta **rewards** original creator badges like your ND logo watermark, protecting your IP while boosting brand recognition.
+        2. **Share to Main Feed Grid (`share_to_feed=true`)**:
            - Reels shared to the main feed receive up to **300% more impressions** from current followers in the first 2 hours.
-        2. **Allow Remixing (`enable_remixing=true`)**:
+        3. **Allow Remixing (`enable_remixing=true`)**:
            - Facebook prioritizes videos that allow users to create remixes, stitches, and duets.
-        3. **Custom Branded Audio (`audio_name`)**:
-           - Naming your audio (e.g. *Original Audio • ND Studio*) allows other creators to click and use your sound, creating a viral snowball effect.
-        4. **Cover Frame Thumbnails**:
-           - The agent automatically extracts a vibrant frame from 1.0s to avoid black first-frame thumbnails.
-        5. **Balanced Tagging**:
-           - The optimizer mixes **broad viral tags** (`#viralreels`, `#explorepage`) with **specific micro-niche tags** for targeted viewer retention.
+        4. **Custom Branded Audio (`audio_name`)**:
+           - Naming your audio (e.g. *Original Audio • ND Studio*) allows other creators to click and use your sound.
         """)
 
 
@@ -347,7 +363,7 @@ with tabs[3]:
     st.subheader("📘 Meta Graph API Configuration")
     st.markdown(f"""
     Your current connected accounts:
-    - **Facebook Page ID**: `{config.FACEBOOK_PAGE_ID}`
+    - **Facebook Page**: `ND Studio by NDTechHub` (`{config.FACEBOOK_PAGE_ID}`)
     - **Instagram Account ID**: `{config.INSTAGRAM_ACCOUNT_ID}`
     - **Access Token**: `{'Configured ✅' if config.META_ACCESS_TOKEN else 'Missing ❌'}`
     """)

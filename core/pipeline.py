@@ -34,6 +34,8 @@ class ReelPipeline:
         bg_music_path: Optional[Path] = None,
         custom_tags: Optional[str] = None,
         custom_mentions: Optional[str] = None,
+        enable_watermark: bool = True,
+        watermark_path: Optional[Path] = config.LOGO_PATH,
         audio_name: str = "Original Audio • ND Studio",
         share_to_feed: bool = True,
         allow_remixing: bool = True,
@@ -41,7 +43,7 @@ class ReelPipeline:
         progress_callback: Optional[Callable[[str, float], None]] = None
     ) -> Dict[str, Any]:
         """
-        Executes the full automated reel creation lifecycle with algorithmic optimization.
+        Executes the full automated reel creation lifecycle with logo watermark & algorithmic optimization.
         """
         start_time = time.time()
         job_id = f"reel_{int(start_time)}"
@@ -49,6 +51,7 @@ class ReelPipeline:
         job_dir.mkdir(parents=True, exist_ok=True)
 
         selected_voice = voice or self.voice
+        active_watermark = watermark_path if (enable_watermark and watermark_path and Path(watermark_path).exists()) else None
 
         def notify(msg: str, pct: float):
             print(f"[{int(pct*100)}%] {msg}")
@@ -98,13 +101,14 @@ class ReelPipeline:
                 "audio_path": audio_file
             })
 
-        # 4. Video Assembly, Ken Burns Motion, and Audio Ducking
-        notify("Rendering animated 9:16 video with dynamic subtitles & background music...", 0.7)
+        # 4. Video Assembly with Ken Burns, Subtitles, Logo Watermark & Music
+        notify("Rendering animated 9:16 video with dynamic subtitles, logo & background music...", 0.7)
         final_video_path = job_dir / f"{job_id}_final.mp4"
         self.video_gen.assemble_reel(
             scenes_data=processed_scenes,
             output_path=final_video_path,
-            bg_music_path=bg_music_path
+            bg_music_path=bg_music_path,
+            watermark_path=active_watermark
         )
 
         # 5. Extract High-CTR Cover Thumbnail Frame
@@ -121,7 +125,8 @@ class ReelPipeline:
                 "cover_path": str(cover_path),
                 "audio_name": audio_name,
                 "share_to_feed": share_to_feed,
-                "allow_remixing": allow_remixing
+                "allow_remixing": allow_remixing,
+                "watermark": bool(active_watermark)
             }
         )
 

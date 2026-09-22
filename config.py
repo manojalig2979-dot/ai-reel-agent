@@ -14,6 +14,10 @@ ASSETS_DIR = BASE_DIR / "assets"
 MUSIC_DIR = ASSETS_DIR / "music"
 FONTS_DIR = ASSETS_DIR / "fonts"
 
+# Branding & Logo
+LOGO_PATH = ASSETS_DIR / "nd_reel.png"
+ENABLE_WATERMARK = True
+
 for path in [OUTPUT_DIR, ASSETS_DIR, MUSIC_DIR, FONTS_DIR]:
     path.mkdir(parents=True, exist_ok=True)
 
@@ -27,7 +31,6 @@ VIDEO_HEIGHT = 1920
 FPS = 30
 
 # TTS Voice Configuration
-# High-quality Microsoft Neural Voices (100% Free via edge-tts)
 VOICE_OPTIONS = {
     "Deep American Male (Christopher)": "en-US-ChristopherNeural",
     "Energetic American Male (Guy)": "en-US-GuyNeural",
