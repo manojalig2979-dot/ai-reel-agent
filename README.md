@@ -1,6 +1,17 @@
-# 🎬 Free AI Reel Generator & Auto-Publisher
+# ND AI Reel Studio
 
-An end-to-end, **100% free-tier** AI agent that takes any topic/prompt, creates a structured script, synthesizes neural voiceover audio, downloads 9:16 vertical AI imagery, animates scenes with Ken Burns motion & subtitles, and publishes or queues them to **Instagram Reels** and **Facebook Pages**.
+<p align="center">
+  <img src="assets/nd_reel.png" alt="ND Reel Studio Logo" width="120" style="border-radius:16px;"/>
+</p>
+
+<p align="center">
+  <b>Free AI Reel Generator &amp; Auto-Publisher</b><br>
+  <sub>100% Free-Tier · 9:16 Vertical · Instagram · Facebook · YouTube Shorts</sub>
+</p>
+
+---
+
+An end-to-end, **100% free-tier** AI agent that takes any topic/prompt, creates a structured script, synthesizes neural voiceover audio, downloads 9:16 vertical AI imagery, animates scenes with Ken Burns motion &amp; subtitles, and publishes or queues them to **Instagram Reels**, **Facebook Pages**, and **YouTube Shorts**.
 
 ---
 
