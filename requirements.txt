@@ -12,3 +12,7 @@ streamlit>=1.35.0
 apscheduler>=3.10.4
 imageio-ffmpeg>=0.4.9
 imageio>=2.34.0
+# YouTube Data API v3 publishing
+google-api-python-client>=2.100.0
+google-auth-oauthlib>=1.1.0
+google-auth-httplib2>=0.2.0

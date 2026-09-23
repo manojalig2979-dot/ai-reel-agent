@@ -3,12 +3,22 @@ import sys
 import time
 from pathlib import Path
 from typing import Dict, Any, Optional, Callable, List
+
+# Ensure UTF-8 output on Windows cp1252 terminals
+os.environ.setdefault("PYTHONIOENCODING", "utf-8")
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 import config
 from core.llm_engine import LLMEngine
 from core.tts_engine import TTSEngine
 from core.image_engine import ImageEngine
 from core.video_engine import VideoEngine
 from core.publisher import MetaPublisher
+from core.youtube_publisher import YouTubePublisher
 from core.tag_engine import TagOptimizer
 
 
@@ -25,11 +35,13 @@ class ReelPipeline:
         self.image_gen = ImageEngine(width=config.VIDEO_WIDTH, height=config.VIDEO_HEIGHT)
         self.video_gen = VideoEngine(width=config.VIDEO_WIDTH, height=config.VIDEO_HEIGHT, fps=config.FPS)
         self.publisher = MetaPublisher()
+        self.youtube = YouTubePublisher()
 
     def generate_full_reel(
         self,
         prompt: str,
         niche: str = "General",
+        style: str = "3D Pixar / Disney Animation (Kids & Family)",
         voice: Optional[str] = None,
         bg_music_path: Optional[Path] = None,
         text_position: str = "bottom",
@@ -43,11 +55,15 @@ class ReelPipeline:
         share_to_feed: bool = True,
         allow_remixing: bool = True,
         auto_publish: bool = False,
+        auto_publish_youtube: bool = False,
+        youtube_privacy: str = "public",
+        made_for_kids: bool = False,
         progress_callback: Optional[Callable[[str, float], None]] = None,
         **kwargs
     ) -> Dict[str, Any]:
         """
-        Executes the full automated reel creation lifecycle with logo watermark & algorithmic optimization.
+        Executes the full automated reel creation lifecycle with logo watermark,
+        3D animation styling, and multi-platform publishing (Instagram, Facebook & YouTube Shorts).
         """
         start_time = time.time()
         job_id = f"reel_{int(start_time)}"
@@ -63,8 +79,8 @@ class ReelPipeline:
                 progress_callback(msg, pct)
 
         # 1. Script Generation
-        notify("Generating viral script and scene visual prompts...", 0.1)
-        script_data = self.llm.generate_script(prompt, niche)
+        notify(f"Generating viral script for '{niche}' in '{style}' style...", 0.1)
+        script_data = self.llm.generate_script(prompt=prompt, niche=niche, style=style)
         title = script_data.get("title", "Daily Discovery")
         scenes = script_data.get("scenes", [])
         base_caption = script_data.get("caption", "")
@@ -96,7 +112,7 @@ class ReelPipeline:
 
             notify(f"Generating scene {scene_num}/{total_scenes}: 9:16 AI Visual...", 0.3 + (0.2 * (i / total_scenes)))
             img_file = job_dir / f"scene_{scene_num}_image.jpg"
-            self.image_gen.generate_image(vis_prompt, img_file)
+            self.image_gen.generate_image(vis_prompt, img_file, style=style)
 
             processed_scenes.append({
                 "scene_id": scene_num,
@@ -105,8 +121,8 @@ class ReelPipeline:
                 "audio_path": audio_file
             })
 
-        # 4. Video Assembly with Ken Burns, Subtitles, Logo Watermark & Music
-        notify("Rendering animated 9:16 video with dynamic subtitles, logo & background music...", 0.7)
+        # 4. Video Assembly with Dynamic 3D Camera Motion, Subtitles & Music
+        notify("Rendering animated 9:16 video with 3D camera motion, subtitles & music...", 0.7)
         final_video_path = job_dir / f"{job_id}_final.mp4"
         self.video_gen.assemble_reel(
             scenes_data=processed_scenes,
@@ -133,20 +149,38 @@ class ReelPipeline:
                 "audio_name": audio_name,
                 "share_to_feed": share_to_feed,
                 "allow_remixing": allow_remixing,
-                "watermark": bool(active_watermark)
+                "watermark": bool(active_watermark),
+                "style": style,
+                "niche": niche,
+                "made_for_kids": made_for_kids
             }
         )
 
-        publish_result = None
+        publish_result = {}
+        # Meta Facebook Page Auto-Post
         if auto_publish:
-            notify("Triggering Meta Auto-Publishing...", 0.95)
+            notify("Triggering Meta Auto-Publishing...", 0.94)
             if self.publisher.is_configured()["facebook"]:
-                publish_result = self.publisher.publish_facebook_reel(
+                fb_res = self.publisher.publish_facebook_reel(
                     video_path=final_video_path,
                     caption=full_caption,
                     title=title,
                     allow_remixing=allow_remixing
                 )
+                publish_result["facebook"] = fb_res
+
+        # YouTube Shorts Auto-Post
+        if auto_publish_youtube:
+            notify("Triggering YouTube Shorts Auto-Publishing...", 0.97)
+            yt_res = self.youtube.upload_short(
+                video_path=final_video_path,
+                title=title,
+                description=full_caption,
+                tags=tags_info["tags"],
+                privacy_status=youtube_privacy,
+                made_for_kids=made_for_kids
+            )
+            publish_result["youtube"] = yt_res
 
         notify("Reel generated successfully!", 1.0)
 
@@ -187,8 +221,7 @@ class ReelPipeline:
         **kwargs
     ) -> Dict[str, Any]:
         """
-        Executes dedicated poetry reel creation: structures user poem into scenes,
-        renders emotional 9:16 imagery, synthesizes neural poetry recitation, and adds music ducking.
+        Executes dedicated poetry reel creation.
         """
         start_time = time.time()
         job_id = f"poetry_{int(start_time)}"
@@ -272,7 +305,7 @@ class ReelPipeline:
         # 5. Extract Cover Thumbnail
         cover_path = self.publisher.extract_cover_thumbnail(final_video_path)
 
-        # 6. Save to Queue / Auto-Publish
+        # 6. Save to Queue
         notify("Saving poetry reel to library...", 0.9)
         self.publisher.save_to_publish_queue(
             video_path=final_video_path,
@@ -289,16 +322,6 @@ class ReelPipeline:
             }
         )
 
-        publish_result = None
-        if auto_publish and self.publisher.is_configured()["facebook"]:
-            notify("Publishing poetry reel to Facebook...", 0.95)
-            publish_result = self.publisher.publish_facebook_reel(
-                video_path=final_video_path,
-                caption=full_caption,
-                title=title,
-                allow_remixing=allow_remixing
-            )
-
         notify("Poetry Reel created successfully!", 1.0)
         elapsed = time.time() - start_time
         return {
@@ -309,6 +332,5 @@ class ReelPipeline:
             "script_data": script_data,
             "caption": full_caption,
             "hashtags": tags_info["tags"],
-            "elapsed_seconds": round(elapsed, 1),
-            "published": publish_result
+            "elapsed_seconds": round(elapsed, 1)
         }
