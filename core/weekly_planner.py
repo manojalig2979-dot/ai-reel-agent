@@ -14,7 +14,7 @@ DEFAULT_WEEKLY_PLAN = {
         "style": "3D Pixar / Disney Animation (Kids & Family)",
         "music": "motivation",
         "voice": "hi-IN-MadhurNeural",
-        "audience": "Kids & Families",
+        "audience": "All",
         "time": "21:00"
     },
     "Tuesday": {
@@ -23,7 +23,7 @@ DEFAULT_WEEKLY_PLAN = {
         "style": "3D Pixar / Disney Animation (Kids & Family)",
         "music": "motivation",
         "voice": "hi-IN-MadhurNeural",
-        "audience": "Kids & Families",
+        "audience": "All",
         "time": "21:00"
     },
     "Wednesday": {
@@ -32,7 +32,7 @@ DEFAULT_WEEKLY_PLAN = {
         "style": "3D Pixar / Disney Animation (Kids & Family)",
         "music": "motivation",
         "voice": "hi-IN-SwaraNeural",
-        "audience": "Kids & Families",
+        "audience": "All",
         "time": "21:00"
     },
     "Thursday": {
@@ -41,7 +41,7 @@ DEFAULT_WEEKLY_PLAN = {
         "style": "3D Pixar / Disney Animation (Kids & Family)",
         "music": "lofi",
         "voice": "hi-IN-SwaraNeural",
-        "audience": "Kids & Families",
+        "audience": "All",
         "time": "21:00"
     },
     "Friday": {
@@ -50,7 +50,7 @@ DEFAULT_WEEKLY_PLAN = {
         "style": "3D Pixar / Disney Animation (Kids & Family)",
         "music": "motivation",
         "voice": "hi-IN-SwaraNeural",
-        "audience": "Kids & Families",
+        "audience": "All",
         "time": "21:00"
     },
     "Saturday": {
@@ -59,7 +59,7 @@ DEFAULT_WEEKLY_PLAN = {
         "style": "3D Pixar / Disney Animation (Kids & Family)",
         "music": "suspense",
         "voice": "hi-IN-MadhurNeural",
-        "audience": "Kids & Families",
+        "audience": "All",
         "time": "21:00"
     },
     "Sunday": {
@@ -68,7 +68,7 @@ DEFAULT_WEEKLY_PLAN = {
         "style": "3D Pixar / Disney Animation (Kids & Family)",
         "music": "motivation",
         "voice": "hi-IN-SwaraNeural",
-        "audience": "Kids & Families",
+        "audience": "All",
         "time": "21:00"
     }
 }
@@ -90,6 +90,7 @@ class WeeklyPlanner:
                         for d, details in data.items():
                             if isinstance(details, dict):
                                 details.setdefault("time", "21:00")
+                                details.setdefault("audience", "All")
                         return data
             except Exception:
                 pass
@@ -100,6 +101,7 @@ class WeeklyPlanner:
         for day, details in schedule_data.items():
             if isinstance(details, dict):
                 details.setdefault("time", "21:00")
+                details.setdefault("audience", "All")
         with open(SCHEDULE_FILE, "w", encoding="utf-8") as f:
             json.dump(schedule_data, f, indent=2, ensure_ascii=False)
         print(f"[WeeklyPlanner] Saved weekly schedule to {SCHEDULE_FILE}")
@@ -114,6 +116,7 @@ class WeeklyPlanner:
         for day, details in new_plan.items():
             if isinstance(details, dict):
                 details.setdefault("time", "21:00")
+                details.setdefault("audience", "All")
         cls.save_schedule(new_plan)
         return new_plan
 
@@ -130,7 +133,7 @@ class WeeklyPlanner:
             "style": "3D Pixar / Disney Animation (Kids & Family)",
             "music": "motivation",
             "voice": config.DEFAULT_VOICE,
-            "audience": "Kids & Families",
+            "audience": "All",
             "time": "21:00"
         }))
 

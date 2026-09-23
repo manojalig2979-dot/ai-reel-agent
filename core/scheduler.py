@@ -37,7 +37,8 @@ class ReelScheduler:
         music_name = today_plan.get("music", "motivation")
         voice_id = today_plan.get("voice", config.DEFAULT_VOICE)
         scheduled_time = today_plan.get("time", "21:00")
-        is_kids = "kids" in f"{niche} {style}".lower()
+        audience = today_plan.get("audience", "All")
+        is_kids = (str(audience).strip().lower() == "kids only")
 
         music_file = config.MUSIC_DIR / f"{music_name}.mp3" if music_name != "none" else None
 
@@ -45,6 +46,7 @@ class ReelScheduler:
         print(f"[Scheduler] Triggering scheduled Reel job at {now_str}")
         print(f"[Scheduler] Day            : {target_day}")
         print(f"[Scheduler] Scheduled Time : {scheduled_time}")
+        print(f"[Scheduler] Audience       : {audience} (Made for Kids: {is_kids})")
         print(f"[Scheduler] Niche          : {niche}")
         print(f"[Scheduler] Style          : {style}")
         print(f"[Scheduler] Topic          : '{topic}'")

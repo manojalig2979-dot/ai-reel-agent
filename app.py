@@ -286,20 +286,25 @@ with tabs[0]:
             custom_tags_input = st.text_input("Custom Hashtags", value="#NDStudio, #Trending, #ViralShorts", key="t1_tags")
             custom_mentions_input = st.text_input("Account Mentions", value="@NDStudio", key="t1_mentions")
 
-        with st.expander("📤 Multi-Platform Auto-Publishing", expanded=False):
-            p_fb = st.checkbox("Auto-publish to Facebook Page", value=False, key="t1_autopost_fb")
-            p_yt = st.checkbox("Auto-publish to YouTube Shorts", value=False, key="t1_autopost_yt")
+        with st.expander("📤 Multi-Platform Auto-Publishing (Facebook & YouTube)", expanded=True):
+            pcol_fb, pcol_yt = st.columns(2)
+            with pcol_fb:
+                p_fb = st.checkbox("Auto-publish to Facebook Page", value=has_meta_configured, key="t1_autopost_fb", help="Directly publishes as a public Reel on your connected Facebook Page.")
+            with pcol_yt:
+                p_yt = st.checkbox("Auto-publish to YouTube Shorts", value=yt_status["configured"], key="t1_autopost_yt", help="Directly uploads as a Short to your authenticated YouTube channel.")
             
-            if p_yt:
-                ycol1, ycol2 = st.columns(2)
-                with ycol1:
-                    yt_priv = st.selectbox("YouTube Privacy", ["public", "unlisted", "private"], index=0, key="t1_yt_priv")
-                with ycol2:
-                    is_kids_val = "kids" in selected_niche.lower() or "pixar" in selected_style.lower()
-                    yt_kids = st.checkbox("Mark as Made for Kids", value=is_kids_val, key="t1_yt_kids")
-            else:
-                yt_priv = "public"
-                yt_kids = False
+            ycol1, ycol2 = st.columns(2)
+            with ycol1:
+                yt_priv = st.selectbox("YouTube Visibility", ["public", "unlisted", "private"], index=0, key="t1_yt_priv")
+            with ycol2:
+                aud_choice = st.selectbox(
+                    "Audience Reach",
+                    ["All (Universal Reach - Suitable for Everyone)", "Kids Only (Restricted to YouTube Kids)"],
+                    index=0,
+                    key="t1_yt_aud",
+                    help="'All' gives full reach, comments, and recommendations across the entire platform."
+                )
+                yt_kids = (aud_choice == "Kids Only (Restricted to YouTube Kids)")
 
             st.divider()
             st.markdown("##### ⏰ Release Timing & Scheduling")
@@ -572,6 +577,11 @@ with tabs[1]:
                 m_idx = m_list.index(cur_m) if cur_m in m_list else 0
                 m_val = st.selectbox(f"Music ({day})", m_list, index=m_idx, key=f"music_{day}")
 
+                aud_list = ["All", "General", "Kids Only", "Youth & Professionals"]
+                cur_a = day_data.get("audience", "All")
+                a_idx = aud_list.index(cur_a) if cur_a in aud_list else 0
+                aud_val = st.selectbox(f"Audience ({day})", aud_list, index=a_idx, key=f"aud_{day}", help="'All' enables full reach across all viewer segments.")
+
             updated_schedule[day] = {
                 "niche": n_val,
                 "topic": t_val,
@@ -579,10 +589,10 @@ with tabs[1]:
                 "music": m_val,
                 "time": time_val.strftime("%H:%M"),
                 "voice": day_data.get("voice", config.DEFAULT_VOICE),
-                "audience": day_data.get("audience", "General")
+                "audience": aud_val
             }
 
-    scol_save, scol_run = st.columns([0.6, 0.4])
+    scol_save, scol_run = st.columns([0.55, 0.45])
     with scol_save:
         if st.button("💾 Save All Schedule & Time Changes", type="primary", use_container_width=True):
             WeeklyPlanner.save_schedule(updated_schedule)
@@ -592,24 +602,34 @@ with tabs[1]:
                 sched.start_weekly_schedule()
                 st.success("✅ Schedule & Times saved! Active background scheduler updated with new triggers.")
             else:
-                st.success("✅ Weekly schedule and posting times saved successfully!")
+                st.success("✅ Weekly schedule, times, and audience settings saved successfully!")
             st.rerun()
 
     with scol_run:
-        if st.button("⚡ Test-Run Today's Scheduled Reel Now", use_container_width=True):
-            with st.spinner(f"Generating today's ({current_day}) reel..."):
+        if st.button("⚡ Test-Run Today's Scheduled Reel (Auto-Post)", use_container_width=True):
+            with st.spinner(f"Generating and auto-publishing today's ({current_day}) reel..."):
                 try:
                     today_info = WeeklyPlanner.get_todays_prompt(current_day)
                     pipe = ReelPipeline(voice=today_info.get("voice", config.DEFAULT_VOICE))
                     m_path = config.MUSIC_DIR / f"{today_info.get('music', 'motivation')}.mp3" if today_info.get("music") != "none" else None
-                    
+                    is_test_kids = (str(today_info.get("audience", "All")).strip().lower() == "kids only")
+
                     res = pipe.generate_full_reel(
                         prompt=today_info["topic"],
                         niche=today_info["niche"],
                         style=today_info.get("style", "3D Pixar / Disney Animation (Kids & Family)"),
-                        bg_music_path=m_path
+                        bg_music_path=m_path,
+                        auto_publish=True,
+                        auto_publish_youtube=True,
+                        made_for_kids=is_test_kids
                     )
-                    st.success(f"🎉 Created Today's Reel! Saved to: `{res['video_path']}`")
+                    pub_notes = []
+                    if res.get("published", {}).get("facebook", {}).get("success"):
+                        pub_notes.append("Facebook Page ✅")
+                    if res.get("published", {}).get("youtube", {}).get("success"):
+                        pub_notes.append("YouTube Shorts ✅")
+                    pub_str = f" | Published to: {', '.join(pub_notes)}" if pub_notes else ""
+                    st.success(f"🎉 Created & Processed Today's Reel! Saved to: `{res['video_path']}`{pub_str}")
                 except Exception as ex:
                     st.error(f"Error: {ex}")
 

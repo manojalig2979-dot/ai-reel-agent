@@ -5,8 +5,8 @@
     "style": "3D Pixar / Disney Animation (Kids & Family)",
     "music": "motivation",
     "voice": "hi-IN-MadhurNeural",
-    "audience": "Kids & Families",
-    "time": "21:00"
+    "audience": "All",
+    "time": "20:00"
   },
   "Tuesday": {
     "niche": "Kids & Animated Mythology",
@@ -14,8 +14,8 @@
     "style": "3D Pixar / Disney Animation (Kids & Family)",
     "music": "motivation",
     "voice": "hi-IN-MadhurNeural",
-    "audience": "Kids & Families",
-    "time": "21:00"
+    "audience": "All",
+    "time": "20:00"
   },
   "Wednesday": {
     "niche": "Kids & Animated Mythology",
@@ -23,8 +23,8 @@
     "style": "3D Pixar / Disney Animation (Kids & Family)",
     "music": "motivation",
     "voice": "hi-IN-SwaraNeural",
-    "audience": "Kids & Families",
-    "time": "21:00"
+    "audience": "All",
+    "time": "20:00"
   },
   "Thursday": {
     "niche": "Kids & Animated Mythology",
@@ -32,8 +32,8 @@
     "style": "3D Pixar / Disney Animation (Kids & Family)",
     "music": "lofi",
     "voice": "hi-IN-SwaraNeural",
-    "audience": "Kids & Families",
-    "time": "21:00"
+    "audience": "All",
+    "time": "20:00"
   },
   "Friday": {
     "niche": "Kids & Animated Mythology",
@@ -41,8 +41,8 @@
     "style": "3D Pixar / Disney Animation (Kids & Family)",
     "music": "motivation",
     "voice": "hi-IN-SwaraNeural",
-    "audience": "Kids & Families",
-    "time": "21:00"
+    "audience": "All",
+    "time": "20:00"
   },
   "Saturday": {
     "niche": "Kids & Animated Mythology",
@@ -50,8 +50,8 @@
     "style": "3D Pixar / Disney Animation (Kids & Family)",
     "music": "suspense",
     "voice": "hi-IN-MadhurNeural",
-    "audience": "Kids & Families",
-    "time": "21:00"
+    "audience": "All",
+    "time": "20:00"
   },
   "Sunday": {
     "niche": "Kids & Animated Mythology",
@@ -59,7 +59,7 @@
     "style": "3D Pixar / Disney Animation (Kids & Family)",
     "music": "motivation",
     "voice": "hi-IN-SwaraNeural",
-    "audience": "Kids & Families",
-    "time": "21:00"
+    "audience": "All",
+    "time": "20:00"
   }
 }
