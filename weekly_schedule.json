@@ -1,44 +1,65 @@
 {
   "Monday": {
-    "niche": "Motivation & Mindset",
-    "topic": "श्रीमद्भगवद्गीता अध्याय 2 श्लोक 47: कर्मण्येवाधिकारस्ते मा फलेषु कदाचन। कर्म करने का असली रहस्य और फल की चिंता से मुक्ति।",
+    "niche": "Kids & Animated Mythology",
+    "topic": "Bal Hanuman and the Golden Sun — How young Hanuman leaped to catch the sun thinking it was a sweet fruit!",
+    "style": "3D Pixar / Disney Animation (Kids & Family)",
     "music": "motivation",
-    "voice": "hi-IN-SwaraNeural"
+    "voice": "hi-IN-MadhurNeural",
+    "audience": "Kids & Families",
+    "time": "21:00"
   },
   "Tuesday": {
-    "niche": "Motivation & Mindset",
-    "topic": "श्रीमद्भगवद्गीता अध्याय 2 श्लोक 20: नैनं छिन्दन्ति शस्त्राणि नैनं दहति पावकः। आत्मा की अमरता और मृत्यु के भय से मुक्ति।",
+    "niche": "Kids & Animated Mythology",
+    "topic": "Hanuman's Mighty Ocean Leap — Crossing the turbulent sea with fearless courage and devotion to Shri Ram!",
+    "style": "3D Pixar / Disney Animation (Kids & Family)",
     "music": "motivation",
-    "voice": "hi-IN-SwaraNeural"
+    "voice": "hi-IN-MadhurNeural",
+    "audience": "Kids & Families",
+    "time": "21:00"
   },
   "Wednesday": {
-    "niche": "Science & Space",
-    "topic": "श्रीमद्भगवद्गीता अध्याय 4 श्लोक 7: यदा यदा हि धर्मस्य ग्लानिर्भवति भारत। जब जब अधर्म बढ़ता है, ईश्वर का अवतरण और धर्म की रक्षा।",
+    "niche": "Kids & Animated Mythology",
+    "topic": "Lifting Mount Dronagiri — When Hanuman brought the entire Sanjeevani mountain to save Lakshman!",
+    "style": "3D Pixar / Disney Animation (Kids & Family)",
     "music": "motivation",
-    "voice": "hi-IN-SwaraNeural"
+    "voice": "hi-IN-SwaraNeural",
+    "audience": "Kids & Families",
+    "time": "21:00"
   },
   "Thursday": {
-    "niche": "Science & Space",
-    "topic": "श्रीमद्भगवद्गीता अध्याय 6 श्लोक 5: उद्धरेदात्मनात्मानं नात्मानमवसादयेत्। अपने मन को कैसे अपना सबसे अच्छा मित्र बनाएं।",
-    "music": "motivation",
-    "voice": "hi-IN-SwaraNeural"
+    "niche": "Kids & Animated Mythology",
+    "topic": "The Golden Lanka & Ring of Faith — How Hanuman met Mother Sita in Ashok Vatika and gave her hope!",
+    "style": "3D Pixar / Disney Animation (Kids & Family)",
+    "music": "lofi",
+    "voice": "hi-IN-SwaraNeural",
+    "audience": "Kids & Families",
+    "time": "21:00"
   },
   "Friday": {
-    "niche": "Science & Space",
-    "topic": "श्रीमद्भगवद्गीता अध्याय 9 श्लोक 22: अनन्याश्चिन्तयन्तो मां ये जनाः पर्युपासते। जो अनन्य भाव से ईश्वर का स्मरण करते हैं उनका योगक्षेम।",
+    "niche": "Kids & Animated Mythology",
+    "topic": "Hanuman's Heart of Devotion — The divine moment Hanuman showed Sita-Ram in his glowing heart!",
+    "style": "3D Pixar / Disney Animation (Kids & Family)",
     "music": "motivation",
-    "voice": "hi-IN-SwaraNeural"
+    "voice": "hi-IN-SwaraNeural",
+    "audience": "Kids & Families",
+    "time": "21:00"
   },
   "Saturday": {
-    "niche": "Science & Space",
-    "topic": "श्रीमद्भगवद्गीता अध्याय 18 श्लोक 66: सर्वधर्मान्परित्यज्य मामेकं शरणं व्रज। सब चिंताओं को छोड़कर परमात्मा की शरण में जाने का फल।",
-    "music": "motivation",
-    "voice": "hi-IN-SwaraNeural"
+    "niche": "Kids & Animated Mythology",
+    "topic": "Shani Dev and Hanuman's Protection — Why Hanuman protects everyone from fear and negativity!",
+    "style": "3D Pixar / Disney Animation (Kids & Family)",
+    "music": "suspense",
+    "voice": "hi-IN-MadhurNeural",
+    "audience": "Kids & Families",
+    "time": "21:00"
   },
   "Sunday": {
-    "niche": "Science & Space",
-    "topic": "श्रीमद्भगवद्गीता अध्याय 2 श्लोक 62-63: ध्यायतो विषयान्पुंसः। क्रोध और वासना से बुद्धि का नाश और शांति का मार्ग।",
+    "niche": "Kids & Animated Mythology",
+    "topic": "The Superpower of Hanuman Chalisa for Kids — 3 lessons of strength, focus, and kindness for young champions!",
+    "style": "3D Pixar / Disney Animation (Kids & Family)",
     "music": "motivation",
-    "voice": "hi-IN-SwaraNeural"
+    "voice": "hi-IN-SwaraNeural",
+    "audience": "Kids & Families",
+    "time": "21:00"
   }
 }

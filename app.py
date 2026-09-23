@@ -21,7 +21,7 @@ if hasattr(sys.stderr, "reconfigure"):
 import json
 import time
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, time as dtime, date as ddate
 import importlib
 import streamlit as st
 import config
@@ -31,6 +31,7 @@ from core.publisher import MetaPublisher
 from core.youtube_publisher import YouTubePublisher
 from core.tag_engine import TagOptimizer
 from core.weekly_planner import WeeklyPlanner
+from core.scheduler import get_global_scheduler
 
 # Check if custom logo exists and load it for use as browser tab favicon
 has_custom_logo = config.LOGO_PATH.exists()
@@ -300,6 +301,25 @@ with tabs[0]:
                 yt_priv = "public"
                 yt_kids = False
 
+            st.divider()
+            st.markdown("##### ⏰ Release Timing & Scheduling")
+            t1_timing_mode = st.radio(
+                "Publication Timing",
+                ["🚀 Publish Immediately", "⏰ Schedule Release for Later"],
+                horizontal=True,
+                key="t1_timing_mode"
+            )
+            if t1_timing_mode == "⏰ Schedule Release for Later":
+                st1_col1, st1_col2 = st.columns(2)
+                with st1_col1:
+                    t1_sched_date = st.date_input("Release Date", value=ddate.today(), key="t1_sched_date")
+                with st1_col2:
+                    t1_sched_time = st.time_input("Release Time (24h)", value=dtime(21, 0), key="t1_sched_time")
+                t1_target_schedule_str = f"{t1_sched_date.strftime('%Y-%m-%d')} {t1_sched_time.strftime('%H:%M')}"
+                st.caption(f"📅 This reel will be cataloged & scheduled for release on: **{t1_target_schedule_str}**")
+            else:
+                t1_target_schedule_str = None
+
         generate_btn = st.button("🚀 Generate 9:16 Animated Reel / Short", type="primary", use_container_width=True)
 
     with col2:
@@ -339,6 +359,7 @@ with tabs[0]:
                     auto_publish_youtube=p_yt,
                     youtube_privacy=yt_priv,
                     made_for_kids=yt_kids,
+                    scheduled_time=t1_target_schedule_str,
                     progress_callback=update_progress
                 )
 
@@ -388,8 +409,72 @@ with tabs[0]:
 # TAB 2: AI 7-DAY SCHEDULE PLANNER (PROMPT-DRIVEN)
 # ==========================================
 with tabs[1]:
-    st.subheader("📅 AI 7-Day Content Scheduler & Prompt Manager")
-    st.markdown("Give the AI any theme or instruction (e.g. *Lord Hanuman stories for kids*, *Cosmic space mysteries*, *High-energy motivation*), and it will automatically generate and program your complete 7-day schedule!")
+    st.subheader("📅 AI 7-Day Content Scheduler & Automated Publisher")
+    st.markdown("Automate your short-form video release workflow! Program individual posting times for all 7 days, generate themes with AI, or start the 24/7 background publisher.")
+
+    # ⏰ Master Schedule Time & Background Automation Controller
+    st.markdown("### ⏰ Daily Posting Time & 24/7 Automation Control")
+    mcol1, mcol2, mcol3 = st.columns([0.34, 0.33, 0.33])
+    
+    weekly_schedule = WeeklyPlanner.load_schedule()
+    days_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    current_day = datetime.now().strftime("%A")
+
+    today_data = weekly_schedule.get(current_day, {})
+    default_time_str = today_data.get("time", "21:00")
+    try:
+        def_h, def_m = map(int, default_time_str.split(":"))
+        master_init_time = dtime(def_h, def_m)
+    except Exception:
+        master_init_time = dtime(21, 0)
+
+    with mcol1:
+        master_time_input = st.time_input(
+            "Default Daily Posting Time",
+            value=master_init_time,
+            key="master_time_input",
+            help="Set the standard time when daily reels will be generated and published."
+        )
+
+    with mcol2:
+        st.write("")
+        st.write("")
+        if st.button("⚡ Apply Time to All 7 Days", use_container_width=True):
+            formatted_m_time = master_time_input.strftime("%H:%M")
+            for d in days_of_week:
+                if d in weekly_schedule:
+                    weekly_schedule[d]["time"] = formatted_m_time
+            WeeklyPlanner.save_schedule(weekly_schedule)
+            st.success(f"✅ Set {master_time_input.strftime('%I:%M %p')} ({formatted_m_time}) for all 7 days!")
+            st.rerun()
+
+    with mcol3:
+        sched = get_global_scheduler()
+        sched_status = sched.get_status()
+        st.write("**Auto-Publisher Engine:**")
+        if sched_status["running"]:
+            st.markdown('<span class="badge" style="color:#00FF66;border-color:#00FF6644;">🟢 ACTIVE (Running in Background)</span>', unsafe_allow_html=True)
+        else:
+            st.markdown('<span class="badge" style="color:#FFB800;border-color:#FFB80044;">⚪ STANDBY (Stopped)</span>', unsafe_allow_html=True)
+
+    ctl_col1, ctl_col2 = st.columns(2)
+    with ctl_col1:
+        if st.button("▶️ Start 24/7 In-App Auto-Scheduler", type="primary" if not sched_status["running"] else "secondary", use_container_width=True):
+            sched.start_weekly_schedule()
+            st.success("🚀 24/7 Background Scheduler started! Reels will be generated & auto-published at each day's scheduled time.")
+            st.rerun()
+    with ctl_col2:
+        if st.button("⏹️ Stop Background Auto-Scheduler", disabled=not sched_status["running"], use_container_width=True):
+            sched.stop()
+            st.info("⏹️ Background scheduler stopped.")
+            st.rerun()
+
+    if sched_status["running"] and sched_status["jobs"]:
+        with st.expander(f"📋 View Active Scheduled Triggers ({sched_status['jobs_count']} Daily Jobs Registered)", expanded=False):
+            for j in sched_status["jobs"]:
+                st.write(f"- **{j['id'].replace('job_', '').title()}**: Next trigger on `{j['next_run']}`")
+
+    st.divider()
 
     # Prompt-Based Schedule Generator
     st.markdown("### 🪄 Generate New 7-Day Schedule with AI")
@@ -422,18 +507,23 @@ with tabs[1]:
             try:
                 new_plan = WeeklyPlanner.generate_ai_schedule(schedule_prompt_input)
                 st.success(f"🎉 7-Day Schedule generated and saved successfully for theme: '{schedule_prompt_input}'!")
+                st.rerun()
             except Exception as se:
                 st.error(f"Error generating schedule: {se}")
 
     st.divider()
 
     # View & Edit 7-Day Calendar
-    st.markdown("### 🗓️ Active 7-Day Weekly Calendar")
-    weekly_schedule = WeeklyPlanner.load_schedule()
-    days_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-    current_day = datetime.now().strftime("%A")
+    st.markdown("### 🗓️ Active 7-Day Weekly Calendar & Schedule Times")
 
-    st.info(f"📆 **Today is {current_day}** — Scheduled Topic: *'{weekly_schedule.get(current_day, {}).get('topic', '')}'*")
+    today_time_str = today_data.get("time", "21:00")
+    try:
+        th, tm = map(int, today_time_str.split(":"))
+        today_time_display = dtime(th, tm).strftime("%I:%M %p")
+    except Exception:
+        today_time_display = today_time_str
+
+    st.info(f"📆 **Today is {current_day}** • ⏰ **Scheduled Posting Time: {today_time_display} ({today_time_str})**\n\n📌 **Today's Topic:** *'{today_data.get('topic', '')}'*")
 
     updated_schedule = {}
 
@@ -441,7 +531,14 @@ with tabs[1]:
         day_data = weekly_schedule.get(day, {})
         is_today = (day == current_day)
         
-        day_header = f"🗓️ **{day}** {'✨ (TODAY)' if is_today else ''} — *{day_data.get('niche', 'General')}*"
+        d_time_str = day_data.get("time", "21:00")
+        try:
+            dh, dm = map(int, d_time_str.split(":"))
+            d_time_display = dtime(dh, dm).strftime("%I:%M %p")
+        except Exception:
+            d_time_display = d_time_str
+
+        day_header = f"🗓️ **{day}** {'✨ (TODAY)' if is_today else ''} — *{day_data.get('niche', 'General')}* • ⏰ **{d_time_display}**"
         
         with st.expander(day_header, expanded=is_today):
             dcol1, dcol2 = st.columns([0.65, 0.35])
@@ -450,6 +547,13 @@ with tabs[1]:
                 t_val = st.text_area(f"Prompt / Storyline for {day}", value=day_data.get("topic", ""), height=90, key=f"topic_{day}")
             
             with dcol2:
+                try:
+                    th_i, tm_i = map(int, d_time_str.split(":"))
+                    init_t = dtime(th_i, tm_i)
+                except Exception:
+                    init_t = dtime(21, 0)
+                time_val = st.time_input(f"⏰ Schedule Time ({day})", value=init_t, key=f"time_{day}")
+
                 n_list = [
                     "Kids & Animated Mythology", "Devotional & Spiritual", "Motivation & Mindset",
                     "Science & Space", "AI & Future Tech", "Dark History & Mysteries", "Psychology Facts", "Business & Wealth"
@@ -473,15 +577,24 @@ with tabs[1]:
                 "topic": t_val,
                 "style": s_val,
                 "music": m_val,
+                "time": time_val.strftime("%H:%M"),
                 "voice": day_data.get("voice", config.DEFAULT_VOICE),
                 "audience": day_data.get("audience", "General")
             }
 
     scol_save, scol_run = st.columns([0.6, 0.4])
     with scol_save:
-        if st.button("💾 Save All Schedule Changes", type="primary", use_container_width=True):
+        if st.button("💾 Save All Schedule & Time Changes", type="primary", use_container_width=True):
             WeeklyPlanner.save_schedule(updated_schedule)
-            st.success("✅ Weekly schedule saved successfully! Daily automation will use these exact prompts.")
+            # If scheduler is currently active, refresh its triggers with the new times
+            sched = get_global_scheduler()
+            if sched.scheduler and sched.scheduler.running:
+                sched.start_weekly_schedule()
+                st.success("✅ Schedule & Times saved! Active background scheduler updated with new triggers.")
+            else:
+                st.success("✅ Weekly schedule and posting times saved successfully!")
+            st.rerun()
+
     with scol_run:
         if st.button("⚡ Test-Run Today's Scheduled Reel Now", use_container_width=True):
             with st.spinner(f"Generating today's ({current_day}) reel..."):
@@ -652,6 +765,9 @@ with tabs[3]:
 
                 with qcol2:
                     st.write("**Title:**", item.get("title"))
+                    sched_ts = item.get("metadata", {}).get("scheduled_time")
+                    if sched_ts:
+                        st.markdown(f'<span class="badge" style="color:#FFD000;border-color:#FFD00055;margin-bottom:8px;">⏰ Scheduled Release: {sched_ts}</span>', unsafe_allow_html=True)
                     st.text_area("Caption & Tags", item.get("caption", ""), height=110, key=f"cap_{item['id']}")
                     
                     st.write("**Direct Multi-Platform Publishing:**")

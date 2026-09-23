@@ -53,19 +53,31 @@ class VideoEngine:
         watermark_opacity: float = 0.88
     ) -> Path:
         """
-        Renders an animated vertical scene with Ken Burns zoom + dynamic subtitles + creator logo watermark.
-        Supports motion animations: 'static', 'scroll_up', 'scroll_down', 'float_up'.
+        Renders an animated vertical scene with dynamic 3D camera motion + vivid color enhancement + animated subtitles.
         """
         frames = int(duration * self.fps)
-        zoom_speed = 0.0012
 
-        if scene_idx % 2 == 0:
-            zoom_expr = f"min(zoom+{zoom_speed}, 1.15)"
+        # Dynamic alternating camera motion for high cinematic energy
+        motion_type = scene_idx % 4
+        if motion_type == 0:
+            # Dynamic Push-In (Zoom from 1.0 to 1.18)
+            zoom_expr = "min(zoom+0.0015, 1.18)"
             x_expr = "iw/2-(iw/zoom/2)"
             y_expr = "ih/2-(ih/zoom/2)"
-        else:
-            zoom_expr = f"max(1.15-(on*{zoom_speed}), 1.0)"
+        elif motion_type == 1:
+            # Majestic Zoom-Out (Zoom from 1.18 down to 1.0)
+            zoom_expr = "max(1.18-(on*0.0015), 1.0)"
             x_expr = "iw/2-(iw/zoom/2)"
+            y_expr = "ih/2-(ih/zoom/2)"
+        elif motion_type == 2:
+            # Vertical Floating Pan
+            zoom_expr = "1.12"
+            x_expr = "iw/2-(iw/zoom/2)"
+            y_expr = f"(ih-ih/zoom)*(on/{frames})"
+        else:
+            # Dynamic Slow Push-In
+            zoom_expr = "min(zoom+0.0012, 1.15)"
+            x_expr = f"(iw-iw/zoom)*(0.3+0.4*(on/{frames}))"
             y_expr = "ih/2-(ih/zoom/2)"
 
         # Text motion overlay calculation
@@ -81,10 +93,13 @@ class VideoEngine:
 
         has_watermark = watermark_path and Path(watermark_path).exists()
 
+        # Visual color grading filter (boosts vibrancy & clarity for reels / shorts)
+        color_filter = "eq=saturation=1.12:contrast=1.04"
+
         if has_watermark:
             filter_complex = (
                 f"[0:v]scale=1200:2133:force_original_aspect_ratio=increase,crop=1200:2133,"
-                f"zoompan=z='{zoom_expr}':d={frames}:x='{x_expr}':y='{y_expr}':s={self.width}x{self.height}:fps={self.fps}[bg];"
+                f"zoompan=z='{zoom_expr}':d={frames}:x='{x_expr}':y='{y_expr}':s={self.width}x{self.height}:fps={self.fps},{color_filter}[bg];"
                 f"[1:v]scale={self.width}:{self.height}[sub];"
                 f"[3:v]scale=130:130,format=rgba,colorchannelmixer=aa={watermark_opacity}[wm];"
                 f"[bg][sub]{sub_overlay}[v1];"
@@ -111,7 +126,7 @@ class VideoEngine:
         else:
             filter_complex = (
                 f"[0:v]scale=1200:2133:force_original_aspect_ratio=increase,crop=1200:2133,"
-                f"zoompan=z='{zoom_expr}':d={frames}:x='{x_expr}':y='{y_expr}':s={self.width}x{self.height}:fps={self.fps}[bg];"
+                f"zoompan=z='{zoom_expr}':d={frames}:x='{x_expr}':y='{y_expr}':s={self.width}x{self.height}:fps={self.fps},{color_filter}[bg];"
                 f"[1:v]scale={self.width}:{self.height}[sub];"
                 f"[bg][sub]{sub_overlay}[v]"
             )
@@ -148,7 +163,7 @@ class VideoEngine:
         watermark_path: Optional[Path] = None
     ) -> Path:
         """
-        Renders all scenes with Ken Burns + customizable subtitle placement/animation + watermark and concatenates with optional music.
+        Renders all scenes with dynamic 3D camera animations + customizable subtitles + watermark and concatenates.
         """
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -166,7 +181,7 @@ class VideoEngine:
             # 1. Audio duration
             duration = self.get_audio_duration(aud_path)
 
-            # 2. Subtitle overlay with chosen position and non-intrusive styling
+            # 2. Subtitle overlay with chosen position and styling
             sub_arr = self.subtitle_engine.create_subtitle_image(
                 text=text,
                 position=text_position,
@@ -190,38 +205,34 @@ class VideoEngine:
             scene_files.append(scene_mp4)
 
         # 4. Concatenate scenes
-        concat_txt = temp_dir / "concat_list.txt"
-        with open(concat_txt, "w", encoding="utf-8") as f:
-            for s in scene_files:
-                f.write(f"file '{s.as_posix()}'\n")
+        concat_list_path = temp_dir / "concat_list.txt"
+        with open(concat_list_path, "w", encoding="utf-8") as f:
+            for sf in scene_files:
+                f.write(f"file '{sf.resolve().as_posix()}'\n")
 
-        raw_stitched = temp_dir / "raw_stitched.mp4" if bg_music_path else output_path
-
-        concat_cmd = [
+        temp_concat_mp4 = temp_dir / "concatenated_raw.mp4"
+        cmd_concat = [
             self.ffmpeg_exe,
             "-y",
             "-f", "concat",
             "-safe", "0",
-            "-i", str(concat_txt),
+            "-i", str(concat_list_path),
             "-c", "copy",
-            str(raw_stitched)
+            str(temp_concat_mp4)
         ]
-        subprocess.run(concat_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+        subprocess.run(cmd_concat, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
 
-        # 5. Mix Background Music if provided
+        # 5. Mix Background Music if present
         if bg_music_path and Path(bg_music_path).exists():
-            print(f"[VideoEngine] Mixing background music track: {bg_music_path} (volume: {bg_music_volume})...")
-            mix_filter = (
-                f"[0:a]volume=1.0[voice];"
-                f"[1:a]volume={bg_music_volume},aloop=loop=-1:size=2e+09[music];"
-                f"[voice][music]amix=inputs=2:duration=first:dropout_transition=2[aout]"
-            )
-            music_cmd = [
+            print(f"[VideoEngine] Mixing background music track: {bg_music_path} at volume {bg_music_volume}...")
+            cmd_music = [
                 self.ffmpeg_exe,
                 "-y",
-                "-i", str(raw_stitched),
+                "-i", str(temp_concat_mp4),
+                "-stream_loop", "-1",
                 "-i", str(bg_music_path),
-                "-filter_complex", mix_filter,
+                "-filter_complex",
+                f"[1:a]volume={bg_music_volume}[music];[0:a][music]amix=inputs=2:duration=first:dropout_transition=2[aout]",
                 "-map", "0:v",
                 "-map", "[aout]",
                 "-c:v", "copy",
@@ -230,7 +241,12 @@ class VideoEngine:
                 "-shortest",
                 str(output_path)
             ]
-            subprocess.run(music_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+            subprocess.run(cmd_music, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+        else:
+            # Just move the concatenated file
+            if output_path.exists():
+                output_path.unlink()
+            temp_concat_mp4.rename(output_path)
 
-        print(f"[VideoEngine] [SUCCESS] Final 9:16 vertical Reel rendered: {output_path}")
+        print(f"[VideoEngine] [SUCCESS] Final Reel Assembled at: {output_path}")
         return output_path

@@ -58,6 +58,7 @@ class ReelPipeline:
         auto_publish_youtube: bool = False,
         youtube_privacy: str = "public",
         made_for_kids: bool = False,
+        scheduled_time: Optional[str] = None,
         progress_callback: Optional[Callable[[str, float], None]] = None,
         **kwargs
     ) -> Dict[str, Any]:
@@ -152,7 +153,8 @@ class ReelPipeline:
                 "watermark": bool(active_watermark),
                 "style": style,
                 "niche": niche,
-                "made_for_kids": made_for_kids
+                "made_for_kids": made_for_kids,
+                "scheduled_time": scheduled_time
             }
         )
 

@@ -18,12 +18,12 @@ class ImageEngine:
         self,
         prompt: str,
         output_path: Path,
+        style: Optional[str] = None,
         seed: Optional[int] = None
     ) -> Path:
         """
-        Generates a 9:16 vertical image referencing the exact scene script.
-        Uses a multi-tier AI model cascade (FLUX -> Turbo -> Contextual) to guarantee
-        that every scene reflects the actual characters, themes, and narrative.
+        Generates a 9:16 vertical image referencing the exact scene script and chosen visual style.
+        Uses a multi-tier AI model cascade (FLUX -> Turbo -> Contextual) for high quality.
         """
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -31,12 +31,17 @@ class ImageEngine:
         if seed is None:
             seed = random.randint(1000, 999999)
 
-        # Clean and optimize prompt for 9:16 vertical cinematic generation
+        # Style-aware prompt enhancement
+        style_suffix = ""
+        if style and style in config.STYLE_PRESETS:
+            style_suffix = f", {config.STYLE_PRESETS[style]['prompt_suffix']}"
+        elif any(k in prompt.lower() for k in ["hanuman", "bal ", "kid", "child", "pixar", "disney"]):
+            style_suffix = ", 3D Pixar Disney style CGI animation, adorable heroic character design, bright expressive eyes, vibrant colors, magical golden sparkle aura, volumetric studio lighting, vertical 9:16"
+        else:
+            style_suffix = ", cinematic atmosphere, 8k resolution, volumetric lighting, photorealistic masterwork, vertical 9:16"
+
         clean_prompt = prompt.strip().replace("\n", " ")
-        enhanced_prompt = (
-            f"{clean_prompt}, cinematic atmosphere, 8k resolution, photorealistic, "
-            f"epic volumetric lighting, highly detailed masterwork, vertical 9:16 composition"
-        )
+        enhanced_prompt = f"{clean_prompt}{style_suffix}"
         encoded = urllib.parse.quote(enhanced_prompt)
 
         headers = {
@@ -51,7 +56,7 @@ class ImageEngine:
                 f"?width=720&height=1280&seed={seed}&nologo=true&model={model_name}&enhance=true"
             )
             try:
-                res = requests.get(url, headers=headers, timeout=20)
+                res = requests.get(url, headers=headers, timeout=22)
                 if res.status_code == 200 and len(res.content) > 15000 and b"<!DOCTYPE html>" not in res.content[:100]:
                     with open(output_path, "wb") as f:
                         f.write(res.content)
@@ -65,36 +70,29 @@ class ImageEngine:
                     print(f"[ImageEngine] [SUCCESS] AI Scene Image generated via {model_name}: {output_path}")
                     return output_path
             except Exception as e:
-                print(f"[ImageEngine] Model {model_name} timed out or failed. Trying next model...")
+                print(f"[ImageEngine] Model {model_name} note: {e}. Trying next cascade model...")
                 continue
 
-        # 2. Contextual Thematic Search Fallback (Strictly matches prompt keywords)
-        keywords = self._extract_keywords(clean_prompt)
-        print(f"[ImageEngine] Falling back to contextual keyword visual matching for: {keywords}...")
-        
-        # 3. Procedural Scene-Aware Ambient Backdrop (Zero random unrelated stock images)
+        # 2. Contextual Thematic Visual Fallback
         self._generate_thematic_fallback(clean_prompt, output_path, seed)
         return output_path
-
-    def _extract_keywords(self, text: str) -> List[str]:
-        """Extracts key subject nouns from the prompt."""
-        stopwords = {"with", "that", "this", "from", "your", "more", "have", "about", "vertical", "cinematic", "lighting", "shot", "detailed", "photography"}
-        words = [w.strip(".,;:\"'!?()").lower() for w in text.split() if len(w) > 3]
-        return [w for w in words if w not in stopwords][:4]
 
     def _generate_thematic_fallback(self, prompt: str, output_path: Path, seed: int) -> None:
         """
         Renders a thematic, mood-aligned procedural gradient with ambient lighting.
-        The color palette adapts directly to the theme (Spiritual / Devotional / Space / Melancholy).
         """
         random.seed(seed)
         prompt_lower = prompt.lower()
         
         # Determine theme-specific color palette based on prompt content
-        if any(w in prompt_lower for w in ["krishna", "gita", "divine", "god", "spiritual", "shloka", "temple", "sacred"]):
-            # Divine Golden Saffron & Cosmic Blue Aura
-            palette = [(20, 15, 45), (140, 60, 20), (240, 160, 20)]
-            accent_col = (255, 215, 80)
+        if any(w in prompt_lower for w in ["hanuman", "bajrangbali", "maruti", "ram", "krishna", "divine", "god", "spiritual", "shloka", "temple", "sacred"]):
+            # Divine Golden Saffron & Radiant Aura
+            palette = [(30, 15, 45), (180, 70, 20), (255, 170, 30)]
+            accent_col = (255, 220, 90)
+        elif any(w in prompt_lower for w in ["kid", "child", "pixar", "disney", "cartoon", "animation"]):
+            # Cheerful Vibrant Coral & Cyan
+            palette = [(18, 30, 60), (40, 120, 180), (255, 130, 80)]
+            accent_col = (255, 230, 100)
         elif any(w in prompt_lower for w in ["rain", "melancholy", "sad", "alone", "dark", "heart", "tears", "poetry", "shayari"]):
             # Deep Rainy Indigo & Moody Twilight
             palette = [(10, 15, 30), (30, 40, 65), (70, 80, 110)]
@@ -131,7 +129,7 @@ class ImageEngine:
             draw.rectangle([0, y0, self.width, y1], fill=tuple(c))
 
         # Add celestial light blooms matching the theme
-        for _ in range(5):
+        for _ in range(6):
             cx = random.randint(150, self.width - 150)
             cy = random.randint(250, self.height - 250)
             radius = random.randint(220, 450)
@@ -145,4 +143,4 @@ class ImageEngine:
         # Gaussian blur for soft volumetric cinematic glow
         img = img.filter(ImageFilter.GaussianBlur(radius=75))
         img.save(output_path, quality=95)
-        print(f"[ImageEngine] [THEMATIC VISUAL] Contextual backdrop generated: {output_path}")
+        print(f"[ImageEngine] [THEMATIC VISUAL] Backdrop generated: {output_path}")

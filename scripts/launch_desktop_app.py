@@ -2,30 +2,24 @@ import os
 import sys
 import time
 import socket
-import urllib.request
 import subprocess
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 PORT = 8501
 URL = f"http://127.0.0.1:{PORT}"
+SPLASH_PATH = (BASE_DIR / "assets" / "splash.html").resolve()
+
 
 def is_server_running(port: int = PORT) -> bool:
-    """Check if the Streamlit server is already responding."""
-    try:
-        with urllib.request.urlopen(f"http://127.0.0.1:{port}/_stcore/health", timeout=1.0) as resp:
-            return resp.status == 200
-    except Exception:
-        pass
-    
-    # Fallback socket check
+    """Fast non-blocking socket check to see if Streamlit server is already responding."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.settimeout(0.5)
+        s.settimeout(0.08)
         return s.connect_ex(("127.0.0.1", port)) == 0
 
 
 def start_streamlit_server():
-    """Starts Streamlit in the background without any console window."""
+    """Starts Streamlit in the background with maximum startup optimization flags."""
     if is_server_running():
         return
 
@@ -35,11 +29,14 @@ def start_streamlit_server():
         "-m", "streamlit", "run", "app.py",
         "--server.headless", "true",
         "--server.port", str(PORT),
+        "--server.address", "127.0.0.1",
+        "--server.fileWatcherType", "none",
+        "--global.developmentMode", "false",
         "--browser.gatherUsageStats", "false",
+        "--client.toolbarMode", "viewer",
         "--theme.base", "dark"
     ]
 
-    # Windows flags to completely hide console window
     CREATE_NO_WINDOW = 0x08000000
     subprocess.Popen(
         cmd,
@@ -50,15 +47,9 @@ def start_streamlit_server():
         close_fds=True
     )
 
-    # Wait for server to become ready
-    for _ in range(35):
-        time.sleep(0.3)
-        if is_server_running():
-            break
-
 
 def find_browser_app_mode_exe() -> str:
-    """Finds Edge or Chrome to run in standalone desktop application window mode."""
+    """Finds Microsoft Edge or Google Chrome to run in dedicated standalone app-window mode."""
     candidates = [
         Path(os.environ.get("PROGRAMFILES(X86)", "C:/Program Files (x86)")) / "Microsoft/Edge/Application/msedge.exe",
         Path(os.environ.get("PROGRAMFILES", "C:/Program Files")) / "Microsoft/Edge/Application/msedge.exe",
@@ -74,15 +65,22 @@ def find_browser_app_mode_exe() -> str:
 
 
 def launch_desktop_window():
-    """Launches the dedicated standalone Desktop App Window."""
-    start_streamlit_server()
+    """Launches the dedicated standalone Desktop App Window with instant visual feedback."""
+    already_running = is_server_running()
+    
+    if not already_running:
+        start_streamlit_server()
+        # If server wasn't running, target the animated instant splash loader
+        target_url = SPLASH_PATH.as_uri() if SPLASH_PATH.exists() else URL
+    else:
+        target_url = URL
+
     browser_exe = find_browser_app_mode_exe()
 
     if browser_exe:
-        # Launch dedicated frameless/app-mode window without browser tabs or URL bar
         app_args = [
             browser_exe,
-            f"--app={URL}",
+            f"--app={target_url}",
             "--window-size=1380,880",
             "--window-position=80,60",
             "--app-id=NDReelStudio"
@@ -91,7 +89,7 @@ def launch_desktop_window():
         subprocess.Popen(app_args, creationflags=CREATE_NO_WINDOW)
     else:
         import webbrowser
-        webbrowser.open(URL)
+        webbrowser.open(target_url)
 
 
 if __name__ == "__main__":
