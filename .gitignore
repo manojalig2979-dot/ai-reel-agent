@@ -1,5 +1,11 @@
 # Environment variables & secrets
 .env
+client_secret*.json
+token_youtube*.json
+*.token
+*.oauth*
+publish_queue.json
+
 
 # Generated Output & Video Files (Large binaries)
 output/

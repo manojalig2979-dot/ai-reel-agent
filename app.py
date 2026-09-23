@@ -58,10 +58,32 @@ st.markdown("""
     
     #MainMenu {visibility: hidden !important; display: none !important;}
     footer {visibility: hidden !important; display: none !important;}
-    header[data-testid="stHeader"] {visibility: hidden !important; height: 0px !important;}
+    header[data-testid="stHeader"] {
+        background-color: transparent !important;
+        z-index: 1000 !important;
+    }
     [data-testid="stToolbar"] {visibility: hidden !important; display: none !important;}
     [data-testid="stDecoration"] {display: none !important;}
     .stDeployButton, [data-testid="stDeployButton"], button[title*="Deploy"] {display: none !important; visibility: hidden !important;}
+    
+    /* Ensure the mobile/desktop sidebar collapse/expand toggle button is ALWAYS visible & clickable */
+    [data-testid="collapsedControl"] {
+        display: flex !important;
+        visibility: visible !important;
+        top: 0.65rem !important;
+        left: 0.65rem !important;
+        z-index: 9999999 !important;
+        background: #1E222D !important;
+        border: 1px solid #30363D !important;
+        border-radius: 8px !important;
+        color: #FFFFFF !important;
+        padding: 4px 6px !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.6) !important;
+    }
+    [data-testid="collapsedControl"] svg {
+        fill: #FFFFFF !important;
+        color: #FFFFFF !important;
+    }
     
     section[data-testid="stSidebar"] {
         border-right: 1px solid #30363D;
@@ -135,14 +157,23 @@ st.markdown("""
 
 
 def load_queue():
+    session_reels = st.session_state.get("session_reels", [])
     queue_file = config.OUTPUT_DIR / "publish_queue.json"
+    disk_reels = []
     if queue_file.exists():
         try:
             with open(queue_file, "r", encoding="utf-8") as f:
-                return json.load(f)
+                disk_reels = json.load(f)
         except Exception:
-            return []
-    return []
+            disk_reels = []
+    
+    all_reels = list(session_reels)
+    seen_ids = set(r.get("id") for r in all_reels)
+    for dr in disk_reels:
+        if dr.get("id") not in seen_ids:
+            all_reels.append(dr)
+            seen_ids.add(dr.get("id"))
+    return all_reels
 
 
 def get_available_music_tracks():
@@ -182,6 +213,42 @@ with st.sidebar:
             st.success("YouTube ✅")
         else:
             st.caption("YouTube: Ready 📺")
+
+    # Guest / Custom API Keys (100% Private to Visitor's Session)
+    with st.expander("🔑 Add Your Own API Keys (Private)", expanded=False):
+        st.markdown("<small style='color: #8B949E;'>Visiting this web app? Enter your own free API keys to generate reels. Keys are never saved or shared with anyone.</small>", unsafe_allow_html=True)
+        user_gemini_input = st.text_input(
+            "Google Gemini API Key",
+            type="password",
+            value=st.session_state.get("custom_gemini_key", ""),
+            placeholder="AIzaSy...",
+            key="side_gemini_key",
+            help="Free key from Google AI Studio"
+        )
+        if user_gemini_input.strip():
+            st.session_state["custom_gemini_key"] = user_gemini_input.strip()
+
+        user_groq_input = st.text_input(
+            "Groq API Key (Backup)",
+            type="password",
+            value=st.session_state.get("custom_groq_key", ""),
+            placeholder="gsk_...",
+            key="side_groq_key",
+            help="Free fast backup key from console.groq.com"
+        )
+        if user_groq_input.strip():
+            st.session_state["custom_groq_key"] = user_groq_input.strip()
+
+        st.markdown("""
+        <div style="font-size: 0.76rem; color: #8B949E; margin-top: 6px;">
+            ✨ <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: #00E5FF; text-decoration: none;">Get Free Gemini Key (Instant)</a><br>
+            ⚡ <a href="https://console.groq.com/keys" target="_blank" style="color: #00E5FF; text-decoration: none;">Get Free Groq Key</a>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # Active API Keys resolution
+    active_gemini_key = st.session_state.get("custom_gemini_key") or config.GEMINI_API_KEY
+    active_groq_key = st.session_state.get("custom_groq_key") or config.GROQ_API_KEY
 
     st.divider()
     st.subheader("🎙️ Voice & Sound")
@@ -346,8 +413,8 @@ with tabs[0]:
             try:
                 pipeline = ReelPipeline(
                     voice=t1_voice_id,
-                    gemini_key=config.GEMINI_API_KEY,
-                    groq_key=config.GROQ_API_KEY
+                    gemini_key=active_gemini_key,
+                    groq_key=active_groq_key
                 )
 
                 result = pipeline.generate_full_reel(
@@ -373,6 +440,22 @@ with tabs[0]:
 
                 video_file_path = result["video_path"]
                 if Path(video_file_path).exists():
+                    # Record into session-level queue for instant personal library access
+                    if "session_reels" not in st.session_state:
+                        st.session_state["session_reels"] = []
+                    st.session_state["session_reels"].insert(0, {
+                        "id": f"reel_{int(time.time())}",
+                        "title": result.get("title", user_prompt[:40]),
+                        "caption": result.get("caption", ""),
+                        "video_path": str(video_file_path),
+                        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "metadata": {
+                            "scheduled_time": t1_target_schedule_str,
+                            "niche": selected_niche,
+                            "style": selected_style
+                        }
+                    })
+
                     with open(video_file_path, "rb") as vf:
                         video_bytes = vf.read()
                         with col2:
@@ -610,7 +693,11 @@ with tabs[1]:
             with st.spinner(f"Generating and auto-publishing today's ({current_day}) reel..."):
                 try:
                     today_info = WeeklyPlanner.get_todays_prompt(current_day)
-                    pipe = ReelPipeline(voice=today_info.get("voice", config.DEFAULT_VOICE))
+                    pipe = ReelPipeline(
+                        voice=today_info.get("voice", config.DEFAULT_VOICE),
+                        gemini_key=active_gemini_key,
+                        groq_key=active_groq_key
+                    )
                     m_path = config.MUSIC_DIR / f"{today_info.get('music', 'motivation')}.mp3" if today_info.get("music") != "none" else None
                     is_test_kids = (str(today_info.get("audience", "All")).strip().lower() == "kids only")
 
@@ -718,7 +805,11 @@ with tabs[2]:
                 p_status.info(f"⏳ **{int(pct*100)}%** — {msg}")
 
             try:
-                pipeline = ReelPipeline(voice=poem_voice_id)
+                pipeline = ReelPipeline(
+                    voice=poem_voice_id,
+                    gemini_key=active_gemini_key,
+                    groq_key=active_groq_key
+                )
                 poem_res = pipeline.generate_poetry_reel(
                     poem_text=user_poem_text,
                     author_name=poet_author,
@@ -737,6 +828,21 @@ with tabs[2]:
 
                 pv_path = poem_res["video_path"]
                 if Path(pv_path).exists():
+                    # Record to session-level queue for instant library access
+                    if "session_reels" not in st.session_state:
+                        st.session_state["session_reels"] = []
+                    st.session_state["session_reels"].insert(0, {
+                        "id": f"poem_{int(time.time())}",
+                        "title": f"Poetry by {poet_author}",
+                        "caption": poem_res.get("caption", ""),
+                        "video_path": str(pv_path),
+                        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "metadata": {
+                            "niche": "Poetry & Shayari",
+                            "style": poem_art_style
+                        }
+                    })
+
                     with open(pv_path, "rb") as pvf:
                         pv_bytes = pvf.read()
                         with pcol2:
